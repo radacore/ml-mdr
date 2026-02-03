@@ -1,0 +1,270 @@
+Loaded Logistic Regression from /home/rada/kak sri/ml-service/models/logistic_regression.pkl
+Loaded Decision Tree from /home/rada/kak sri/ml-service/models/decision_tree.pkl
+Loaded K-Nearest Neighbor from /home/rada/kak sri/ml-service/models/k-nearest_neighbor.pkl
+Loaded Support Vector Machine from /home/rada/kak sri/ml-service/models/support_vector_machine.pkl
+Models loaded from disk
+
+=== Logistic Regression ===
+Accuracy:  0.9333
+Precision: 1.0000
+Recall:    0.8000
+F1 Score:  0.8889
+Confusion Matrix: TP=8, TN=20, FP=0, FN=2
+
+=== Decision Tree ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+
+=== K-Nearest Neighbor ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+
+=== Support Vector Machine ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+Evaluation completed for loaded models
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.13:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 326-326-636
+127.0.0.1 - - [01/Feb/2026 11:09:38] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:09:40] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:10:05] "POST /retrain HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:10:15] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:10:24] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:11:57] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:15:28] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:17:58] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:19:32] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:25:41] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:27:36] "GET /statistics HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 11:27:57] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:27:19] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:27:22] "GET /statistics HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:31:08] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:31:15] "GET /statistics HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:38:34] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:42:01] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:42:41] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:43:42] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:43:44] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:48:30] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 15:50:00] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 17:44:46] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 17:44:57] "GET /statistics HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 23:38:19] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 23:39:17] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [01/Feb/2026 23:54:59] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [02/Feb/2026 00:02:03] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [02/Feb/2026 00:03:02] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [02/Feb/2026 00:09:45] "GET /statistics HTTP/1.1" 200 -
+127.0.0.1 - - [02/Feb/2026 00:09:48] "GET /features HTTP/1.1" 200 -
+127.0.0.1 - - [02/Feb/2026 00:24:59] "POST /retrain HTTP/1.1" 200 -
+ * Detected change in '/home/rada/kak sri/ml-service/app.py', reloading
+Loaded Logistic Regression from /home/rada/kak sri/ml-service/models/logistic_regression.pkl
+Loaded Decision Tree from /home/rada/kak sri/ml-service/models/decision_tree.pkl
+Loaded K-Nearest Neighbor from /home/rada/kak sri/ml-service/models/k-nearest_neighbor.pkl
+Loaded Support Vector Machine from /home/rada/kak sri/ml-service/models/support_vector_machine.pkl
+Models loaded from disk
+
+=== Logistic Regression ===
+Accuracy:  0.9333
+Precision: 1.0000
+Recall:    0.8000
+F1 Score:  0.8889
+Confusion Matrix: TP=8, TN=20, FP=0, FN=2
+
+=== Decision Tree ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+
+=== K-Nearest Neighbor ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+
+=== Support Vector Machine ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+Evaluation completed for loaded models
+Received 175 training records
+Columns after mapping: ['id', 'Usia', 'Ket.Usia', 'Jenis Kelamin', 'Status Bekerja', 'BB', 'TB', 'IMT', 'Status Gizi', 'Status Merokok', 'Pemeriksaan Kontak', 'Riwayat_DM', 'Riwayat_HIV', 'Komorbiditas', 'Kepatuhan Minum Obat', 'Efek Samping Obat', 'Keterangan Efek Samping', 'Riwayat Pengobatan Sebelumnya', 'Panduan Pengobatan', 'Keberhasilan Pengobatan', 'created_at', 'updated_at']
+Training set size: 119
+Test set size: 30
+
+Cross-validating Logistic Regression...
+  Accuracy: 0.8993 (+/- 0.0622)
+  F1 Score: 0.8360 (+/- 0.0958)
+
+Cross-validating Decision Tree...
+  Accuracy: 0.8076 (+/- 0.1190)
+  F1 Score: 0.6894 (+/- 0.1762)
+
+Cross-validating K-Nearest Neighbor...
+  Accuracy: 0.8493 (+/- 0.0414)
+  F1 Score: 0.6841 (+/- 0.1013)
+
+Cross-validating Support Vector Machine...
+  Accuracy: 0.9243 (+/- 0.0171)
+  F1 Score: 0.8533 (+/- 0.0400)
+Training Logistic Regression...
+Training Decision Tree...
+Training K-Nearest Neighbor...
+Training Support Vector Machine...
+
+Best model: Support Vector Machine (F1: 0.8533)
+
+=== Logistic Regression ===
+Accuracy:  0.9667
+Precision: 0.9000
+Recall:    1.0000
+F1 Score:  0.9474
+Confusion Matrix: TP=9, TN=20, FP=1, FN=0
+
+=== Decision Tree ===
+Accuracy:  0.9333
+Precision: 0.8182
+Recall:    1.0000
+F1 Score:  0.9000
+Confusion Matrix: TP=9, TN=19, FP=2, FN=0
+
+=== K-Nearest Neighbor ===
+Accuracy:  0.9667
+Precision: 0.9000
+Recall:    1.0000
+F1 Score:  0.9474
+Confusion Matrix: TP=9, TN=20, FP=1, FN=0
+
+=== Support Vector Machine ===
+Accuracy:  0.9333
+Precision: 0.8889
+Recall:    0.8889
+F1 Score:  0.8889
+Confusion Matrix: TP=8, TN=20, FP=1, FN=1
+Saved Logistic Regression to /home/rada/kak sri/ml-service/models/logistic_regression.pkl
+Saved Decision Tree to /home/rada/kak sri/ml-service/models/decision_tree.pkl
+Saved K-Nearest Neighbor to /home/rada/kak sri/ml-service/models/k-nearest_neighbor.pkl
+Saved Support Vector Machine to /home/rada/kak sri/ml-service/models/support_vector_machine.pkl
+Received 175 training records
+Columns after mapping: ['id', 'Usia', 'Ket.Usia', 'Jenis Kelamin', 'Status Bekerja', 'BB', 'TB', 'IMT', 'Status Gizi', 'Status Merokok', 'Pemeriksaan Kontak', 'Riwayat_DM', 'Riwayat_HIV', 'Komorbiditas', 'Kepatuhan Minum Obat', 'Efek Samping Obat', 'Keterangan Efek Samping', 'Riwayat Pengobatan Sebelumnya', 'Panduan Pengobatan', 'Keberhasilan Pengobatan', 'created_at', 'updated_at']
+Training set size: 119
+Test set size: 30
+
+Cross-validating Logistic Regression...
+  Accuracy: 0.8993 (+/- 0.0622)
+  F1 Score: 0.8360 (+/- 0.0958)
+
+Cross-validating Decision Tree...
+  Accuracy: 0.8076 (+/- 0.1190)
+  F1 Score: 0.6894 (+/- 0.1762)
+
+Cross-validating K-Nearest Neighbor...
+  Accuracy: 0.8493 (+/- 0.0414)
+  F1 Score: 0.6841 (+/- 0.1013)
+
+Cross-validating Support Vector Machine...
+  Accuracy: 0.9243 (+/- 0.0171)
+  F1 Score: 0.8533 (+/- 0.0400)
+Training Logistic Regression...
+Training Decision Tree...
+Training K-Nearest Neighbor...
+Training Support Vector Machine...
+
+Best model: Support Vector Machine (F1: 0.8533)
+
+=== Logistic Regression ===
+Accuracy:  0.9667
+Precision: 0.9000
+Recall:    1.0000
+F1 Score:  0.9474
+Confusion Matrix: TP=9, TN=20, FP=1, FN=0
+
+=== Decision Tree ===
+Accuracy:  0.9333
+Precision: 0.8182
+Recall:    1.0000
+F1 Score:  0.9000
+Confusion Matrix: TP=9, TN=19, FP=2, FN=0
+
+=== K-Nearest Neighbor ===
+Accuracy:  0.9667
+Precision: 0.9000
+Recall:    1.0000
+F1 Score:  0.9474
+Confusion Matrix: TP=9, TN=20, FP=1, FN=0
+
+=== Support Vector Machine ===
+Accuracy:  0.9333
+Precision: 0.8889
+Recall:    0.8889
+F1 Score:  0.8889
+Confusion Matrix: TP=8, TN=20, FP=1, FN=1
+Saved Logistic Regression to /home/rada/kak sri/ml-service/models/logistic_regression.pkl
+Saved Decision Tree to /home/rada/kak sri/ml-service/models/decision_tree.pkl
+Saved K-Nearest Neighbor to /home/rada/kak sri/ml-service/models/k-nearest_neighbor.pkl
+Saved Support Vector Machine to /home/rada/kak sri/ml-service/models/support_vector_machine.pkl
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 326-326-636
+ * Detected change in '/home/rada/kak sri/ml-service/app.py', reloading
+Loaded Logistic Regression from /home/rada/kak sri/ml-service/models/logistic_regression.pkl
+Loaded Decision Tree from /home/rada/kak sri/ml-service/models/decision_tree.pkl
+Loaded K-Nearest Neighbor from /home/rada/kak sri/ml-service/models/k-nearest_neighbor.pkl
+Loaded Support Vector Machine from /home/rada/kak sri/ml-service/models/support_vector_machine.pkl
+Models loaded from disk
+Fetched 175 records from database
+
+=== Logistic Regression ===
+Accuracy:  0.9333
+Precision: 1.0000
+Recall:    0.8000
+F1 Score:  0.8889
+Confusion Matrix: TP=8, TN=20, FP=0, FN=2
+
+=== Decision Tree ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+
+=== K-Nearest Neighbor ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+
+=== Support Vector Machine ===
+Accuracy:  1.0000
+Precision: 1.0000
+Recall:    1.0000
+F1 Score:  1.0000
+Confusion Matrix: TP=10, TN=20, FP=0, FN=0
+Evaluation completed for loaded models
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 326-326-636
