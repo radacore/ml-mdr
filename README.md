@@ -1,6 +1,6 @@
 # 🏥 MDR-TB Prediction System
 
-Sistem cerdas berbasis Machine Learning untuk memprediksi keberhasilan pengobatan pasien *Multi-Drug Resistant Tuberculosis* (MDR-TB). Proyek ini menggabungkan ekosistem **Laravel 12** yang modern dengan **AI Service** berbasis Python untuk memberikan prediksi medis yang akurat dan berbasis data.
+Sistem cerdas berbasis Machine Learning untuk memprediksi keberhasilan pengobatan pasien *Multi-Drug Resistant Tuberculosis* (MDR-TB). Proyek ini menggabungkan ekosistem **Laravel 12** yang modern dengan **Machine Learning Service** berbasis Python untuk memberikan prediksi medis yang akurat dan berbasis data.
 
 ---
 
@@ -14,7 +14,7 @@ Proyek ini terbagi menjadi dua sub-sistem utama yang saling berkomunikasi melalu
     - **Fitur**: Dashboard, CRUD Data Training, Riwayat Prediksi, Autentikasi.
 
 2.  **[`ml-service/`](./ml-service)**:
-    - **Peran**: Artificial Intelligence Engine.
+    - **Peran**: Machine Learning Engine.
     - **Tech Stack**: Flask, Scikit-learn, Pandas, Joblib.
     - **Fitur**: Preprocessing data medis, Training Model, Prediksi Real-time.
 
@@ -66,7 +66,7 @@ php artisan migrate --seed
 
 ---
 
-### 3. Konfigurasi ML Service (Python)
+### 3. Konfigurasi Machine Learning Service (Python)
 Gunakan terminal baru untuk menjalankan Python service:
 ```bash
 cd ml-service
@@ -84,24 +84,34 @@ pip install -r requirements.txt
 
 ---
 
-## 🏃 Cara Menjalankan Aplikasi
+## 🏃 Cara Menjalankan Aplikasi (Step-by-Step)
 
-Anda harus menjalankan **semua** perintah ini secara bersamaan (di terminal terpisah):
+Untuk menjalankan seluruh sistem, pastikan Anda mengikuti urutan berikut di terminal terpisah:
 
-1.  **AI Engine (Flask)**:
-    ```bash
-    cd ml-service && source venv/bin/activate && python app.py
-    ```
-2.  **Web Backend (Laravel)**:
-    ```bash
-    cd mdr-tb-prediction && php artisan serve
-    ```
-3.  **Frontend Watcher (React/Vite)**:
-    ```bash
-    cd mdr-tb-prediction && npm run dev
-    ```
+### Langkah 1: Jalankan Laravel Backend
+Buka terminal dan masuk ke folder Laravel:
+```bash
+cd mdr-tb-prediction && php artisan serve
+```
+*Pastikan backend berjalan di http://localhost:8000. Laravel harus aktif lebih dulu karena Machine Learning Service memerlukan akses ke API Laravel saat startup.*
 
-Sistem kini dapat diakses melalui: **`http://localhost:8000`**
+### Langkah 2: Jalankan Frontend Watcher (Vite)
+Buka terminal baru dan jalankan compiler asset:
+```bash
+cd mdr-tb-prediction && npm run dev
+```
+*Ini diperlukan agar tampilan UI (React & Tailwind) muncul dengan benar.*
+
+### Langkah 3: Jalankan Machine Learning Service (Flask)
+Buka terminal baru lagi dan jalankan Python service:
+```bash
+cd ml-service && source venv/bin/activate && python app.py
+```
+*Service akan berjalan di http://localhost:5000 dan akan mencoba mengambil data training dari Laravel API.*
+
+---
+
+**Akses Aplikasi**: Buka browser Anda di **`http://localhost:8000`**
 
 ---
 
@@ -140,4 +150,4 @@ Untuk menjamin hasil prediksi yang konsisten, mapping kategorikal telah di-hardc
 ---
 
 ## 📜 Lisensi
-Proyel ini dikembangkan untuk tujuan medis dan riset. Lisensi terbuka [MIT](LICENSE).
+Proyek ini dikembangkan untuk tujuan medis dan riset. Lisensi terbuka [MIT](LICENSE).
