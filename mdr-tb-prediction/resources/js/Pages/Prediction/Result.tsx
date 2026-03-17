@@ -2,8 +2,9 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { ExternalLink, Copy, Check } from 'lucide-react';
 
 interface PredictionResult {
     prediction: string;
@@ -18,6 +19,7 @@ interface PredictionResult {
 
 interface Prediction {
     id: number;
+    slug: string | null;
     prediction_result: string;
     model_used: string;
     confidence_score: number;
@@ -32,6 +34,15 @@ interface Props {
 
 export default function Result({ prediction, result, input }: Props) {
     const isSuccess = result.prediction === 'Berhasil';
+    const [copied, setCopied] = useState(false);
+
+    const handleCopyLink = () => {
+        if (prediction.slug) {
+            navigator.clipboard.writeText(`${window.location.origin}/hasil/${prediction.slug}`);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     // Label mappings for display
     const labelMappings: Record<string, string> = {
@@ -52,6 +63,7 @@ export default function Result({ prediction, result, input }: Props) {
         efek_samping_obat: 'Efek Samping Obat',
         riwayat_pengobatan: 'Riwayat Pengobatan',
         panduan_pengobatan: 'Panduan Pengobatan',
+        nama_lengkap: 'Nama Lengkap',
     };
 
     return (
@@ -89,36 +101,48 @@ export default function Result({ prediction, result, input }: Props) {
                                 Model yang digunakan: <span className="font-semibold">{result.model_used}</span>
                             </p>
                         </div>
-                    </CardContent>
-                </Card>
 
-                {/* Data Input */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Data Pasien yang Diinput</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Parameter</TableHead>
-                                    <TableHead>Nilai</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {Object.entries(input).map(([key, value]) => {
-                                    if (key === 'model_name') return null;
-                                    return (
-                                        <TableRow key={key}>
-                                            <TableCell className="font-medium">
-                                                {labelMappings[key] || key}
-                                            </TableCell>
-                                            <TableCell>{value}</TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
+                        {/* Shareable Link */}
+                        {prediction.slug && (
+                            <div className="mt-6 bg-muted/50 rounded-lg p-4 border">
+                                <h4 className="font-semibold mb-2 text-sm flex items-center gap-2">
+                                    <ExternalLink className="h-4 w-4" />
+                                    Link Hasil Prediksi
+                                </h4>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                    Simpan atau bagikan link berikut untuk melihat kembali hasil prediksi.
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        readOnly
+                                        value={`${window.location.origin}/hasil/${prediction.slug}`}
+                                        className="bg-background text-sm"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCopyLink}
+                                        className="flex-shrink-0 gap-1"
+                                    >
+                                        {copied ? (
+                                            <Check className="h-4 w-4 text-green-500" />
+                                        ) : (
+                                            <Copy className="h-4 w-4" />
+                                        )}
+                                        {copied ? 'Tersalin!' : 'Salin'}
+                                    </Button>
+                                </div>
+                                <a
+                                    href={`/hasil/${prediction.slug}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-sm text-purple-600 hover:underline mt-2"
+                                >
+                                    <ExternalLink className="h-3 w-3" />
+                                    Buka halaman hasil
+                                </a>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

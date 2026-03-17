@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getDecodedValue } from './Show';
 
 interface Prediction {
     id: number;
+    slug: string | null;
     prediction_result: string;
     model_used: string;
     confidence_score: number;
@@ -66,7 +69,7 @@ export default function History({ predictions }: Props) {
                 <CardContent>
                     {predictions.data.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
-                            Belum ada riwayat prediksi. <Link href={route('prediction.index')} className="text-blue-600 hover:underline">Buat prediksi pertama Anda</Link>.
+                            Belum ada riwayat prediksi. <Link href={route('prediction.index')} className="text-purple-600 hover:underline">Buat prediksi pertama Anda</Link>.
                         </div>
                     ) : (
                         <>
@@ -78,6 +81,7 @@ export default function History({ predictions }: Props) {
                                         <TableHead>Hasil Prediksi</TableHead>
                                         <TableHead>Model</TableHead>
                                         <TableHead>Confidence</TableHead>
+                                        <TableHead>Sumber</TableHead>
                                         <TableHead>Usia</TableHead>
                                         <TableHead>Jenis Kelamin</TableHead>
                                         <TableHead>Aksi</TableHead>
@@ -108,13 +112,26 @@ export default function History({ predictions }: Props) {
                                             </TableCell>
                                             <TableCell>{prediction.model_used}</TableCell>
                                             <TableCell>{prediction.confidence_score.toFixed(1)}%</TableCell>
-                                            <TableCell>{prediction.patient_data.ket_usia} tahun</TableCell>
-                                            <TableCell>{prediction.patient_data.jenis_kelamin}</TableCell>
                                             <TableCell>
-                                                <div className="flex gap-2">
+                                                {prediction.slug
+                                                    ? <Badge variant="secondary" className="text-xs">Guest</Badge>
+                                                    : <Badge variant="outline" className="text-xs">User</Badge>
+                                                }
+                                            </TableCell>
+                                            <TableCell>{getDecodedValue('ket_usia', prediction.patient_data.ket_usia ?? prediction.patient_data['Ket.Usia'] ?? '')}</TableCell>
+                                            <TableCell>{getDecodedValue('jenis_kelamin', prediction.patient_data.jenis_kelamin ?? prediction.patient_data['Jenis Kelamin'] ?? '')}</TableCell>
+                                            <TableCell>
+                                                <div className="flex gap-2 items-center">
                                                     <Button variant="outline" size="sm" asChild>
                                                         <Link href={route('prediction.show', prediction.id)}>Detail</Link>
                                                     </Button>
+                                                    {prediction.slug && (
+                                                        <a href={`/hasil/${prediction.slug}`} target="_blank" rel="noopener noreferrer">
+                                                            <Button variant="ghost" size="sm" title="Buka link publik">
+                                                                <ExternalLink className="h-4 w-4" />
+                                                            </Button>
+                                                        </a>
+                                                    )}
                                                     <Button
                                                         variant="destructive"
                                                         size="sm"

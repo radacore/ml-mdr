@@ -2,16 +2,17 @@
 Model Evaluation Module untuk Prediksi Keberhasilan Pengobatan MDR-TB
 
 Modul ini menangani:
-- Perhitungan metrik: Accuracy, Precision, Recall, F1-Score
+- Perhitungan metrik: Accuracy, Precision, Recall, F1-Score, Specificity, AUC-ROC
 - Confusion Matrix
 - Classification Report
+- Tabel perbandingan Training vs Testing
 """
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, classification_report
+    confusion_matrix, classification_report, roc_auc_score
 )
 from typing import Dict, Any
 
@@ -21,24 +22,43 @@ class ModelEvaluator:
     
     def __init__(self):
         self.results: Dict[str, Any] = {}
+        self.comparison_table: Dict[str, Any] = {}
     
-    def evaluate(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+    def evaluate(self, y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray = None) -> Dict[str, float]:
         """
         Menghitung semua metrik evaluasi
         
         Args:
             y_true: Label sebenarnya
             y_pred: Label prediksi
+            y_proba: Probabilitas prediksi kelas positif (untuk AUC-ROC)
             
         Returns:
             Dictionary berisi metrik evaluasi
         """
+        cm = confusion_matrix(y_true, y_pred)
+        if cm.shape == (2, 2):
+            tn, fp, fn, tp = cm.ravel()
+            specificity = float(tn / (tn + fp)) if (tn + fp) > 0 else 0.0
+        else:
+            specificity = 0.0
+
         metrics = {
             'accuracy': float(accuracy_score(y_true, y_pred)),
             'precision': float(precision_score(y_true, y_pred, average='binary', zero_division=0)),
             'recall': float(recall_score(y_true, y_pred, average='binary', zero_division=0)),
-            'f1_score': float(f1_score(y_true, y_pred, average='binary', zero_division=0))
+            'f1_score': float(f1_score(y_true, y_pred, average='binary', zero_division=0)),
+            'specificity': specificity,
         }
+
+        # AUC-ROC
+        if y_proba is not None:
+            try:
+                metrics['auc_roc'] = float(roc_auc_score(y_true, y_proba))
+            except Exception:
+                metrics['auc_roc'] = 0.0
+        else:
+            metrics['auc_roc'] = 0.0
         
         self.results = metrics
         return metrics
@@ -55,7 +75,6 @@ class ModelEvaluator:
         if cm.shape == (2, 2):
             tn, fp, fn, tp = cm.ravel()
         else:
-            # Handle kasus jika hanya ada satu kelas
             tn, fp, fn, tp = 0, 0, 0, 0
             if cm.shape[0] >= 1:
                 if len(np.unique(y_true)) == 1:
@@ -92,14 +111,6 @@ class ModelEvaluator:
                            y_test: pd.Series) -> Dict[str, Dict]:
         """
         Evaluasi semua model pada test set
-        
-        Args:
-            models: Dictionary berisi model-model yang sudah dilatih
-            X_test: Data test features
-            y_test: Data test labels
-            
-        Returns:
-            Dictionary berisi hasil evaluasi untuk setiap model
         """
         results = {}
         
@@ -124,6 +135,65 @@ class ModelEvaluator:
                   f"FP={cm['false_positive']}, FN={cm['false_negative']}")
         
         return results
+
+    def evaluate_train_test(self, models: Dict,
+                            X_train: pd.DataFrame, y_train: pd.Series,
+                            X_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, Dict]:
+        """
+        Evaluasi semua model pada data training DAN testing.
+        Menghitung: Akurasi, Sensitivitas (Recall), Spesifisitas, AUC-ROC
+        untuk kedua set data.
+        
+        Returns:
+            Dictionary: { model_name: { accuracy: {train, test}, sensitivity: {train, test}, ... } }
+        """
+        comparison = {}
+
+        for name, model in models.items():
+            # Training set predictions
+            y_train_pred = model.predict(X_train)
+            try:
+                y_train_proba = model.predict_proba(X_train)[:, 1]
+            except Exception:
+                y_train_proba = None
+
+            # Test set predictions
+            y_test_pred = model.predict(X_test)
+            try:
+                y_test_proba = model.predict_proba(X_test)[:, 1]
+            except Exception:
+                y_test_proba = None
+
+            train_metrics = self.evaluate(y_train, y_train_pred, y_train_proba)
+            test_metrics = self.evaluate(y_test, y_test_pred, y_test_proba)
+
+            comparison[name] = {
+                'accuracy': {
+                    'train': round(train_metrics['accuracy'] * 100, 2),
+                    'test': round(test_metrics['accuracy'] * 100, 2),
+                },
+                'sensitivity': {
+                    'train': round(train_metrics['recall'] * 100, 2),
+                    'test': round(test_metrics['recall'] * 100, 2),
+                },
+                'specificity': {
+                    'train': round(train_metrics['specificity'] * 100, 2),
+                    'test': round(test_metrics['specificity'] * 100, 2),
+                },
+                'auc_roc': {
+                    'train': round(train_metrics.get('auc_roc', 0) * 100, 2),
+                    'test': round(test_metrics.get('auc_roc', 0) * 100, 2),
+                },
+            }
+
+            print(f"\n=== {name} (Train/Test Comparison) ===")
+            print(f"  Accuracy:    Tr={comparison[name]['accuracy']['train']:.2f}% | Ts={comparison[name]['accuracy']['test']:.2f}%")
+            print(f"  Sensitivity: Tr={comparison[name]['sensitivity']['train']:.2f}% | Ts={comparison[name]['sensitivity']['test']:.2f}%")
+            print(f"  Specificity: Tr={comparison[name]['specificity']['train']:.2f}% | Ts={comparison[name]['specificity']['test']:.2f}%")
+            print(f"  AUC-ROC:     Tr={comparison[name]['auc_roc']['train']:.2f}% | Ts={comparison[name]['auc_roc']['test']:.2f}%")
+
+        self.comparison_table = comparison
+        return comparison
 
 
 if __name__ == "__main__":

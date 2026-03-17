@@ -10,7 +10,7 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Toaster } from "@/components/ui/sonner";
-import { PropsWithChildren, ReactNode } from "react";
+import { Fragment, PropsWithChildren, ReactNode } from "react";
 
 interface Props extends PropsWithChildren {
     header?: ReactNode;
@@ -29,8 +29,8 @@ export default function AppLayout({ children, header, breadcrumbs }: Props) {
                         <Breadcrumb>
                             <BreadcrumbList>
                                 {breadcrumbs.map((crumb, index) => (
-                                    <>
-                                        <BreadcrumbItem key={index}>
+                                    <Fragment key={index}>
+                                        <BreadcrumbItem>
                                             {index < breadcrumbs.length - 1 ? (
                                                 <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
                                             ) : (
@@ -38,7 +38,7 @@ export default function AppLayout({ children, header, breadcrumbs }: Props) {
                                             )}
                                         </BreadcrumbItem>
                                         {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-                                    </>
+                                    </Fragment>
                                 ))}
                             </BreadcrumbList>
                         </Breadcrumb>

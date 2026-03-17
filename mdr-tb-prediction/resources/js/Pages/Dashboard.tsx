@@ -3,15 +3,42 @@ import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Activity, History, BarChart3, Database, ArrowRight, Stethoscope } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+interface ActiveModel {
+    id: number;
+    model_name: string;
+    is_active: boolean;
+}
 
 export default function Dashboard() {
+    const [activeModels, setActiveModels] = useState<string>('Logistic Regression, Decision Tree, KNN, dan SVM');
+
+    useEffect(() => {
+        axios.get('/api/active-models')
+            .then(res => {
+                const active = res.data.filter((m: ActiveModel) => m.is_active).map((m: ActiveModel) => m.model_name);
+                if (active.length > 0) {
+                    if (active.length === 1) {
+                        setActiveModels(active[0]);
+                    } else if (active.length === 2) {
+                        setActiveModels(active.join(' dan '));
+                    } else {
+                        const last = active.pop();
+                        setActiveModels(active.join(', ') + ', dan ' + last);
+                    }
+                }
+            })
+            .catch(err => console.error("Failed to fetch active models", err));
+    }, []);
     const quickLinks = [
         {
             title: 'Prediksi Baru',
             description: 'Lakukan prediksi keberhasilan pengobatan MDR-TB',
             icon: Activity,
             href: '/prediction',
-            color: 'from-blue-600 to-blue-400',
+            color: 'from-purple-600 to-purple-400',
         },
         {
             title: 'Riwayat Prediksi',
@@ -58,8 +85,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
-                            Aplikasi ini menggunakan algoritma Logistic Regression, Decision Tree, KNN, dan SVM
-                            untuk memprediksi keberhasilan pengobatan MDR-TB berdasarkan data pasien.
+                            Aplikasi ini menggunakan algoritma {activeModels} untuk memprediksi keberhasilan pengobatan MDR-TB berdasarkan data pasien.
                         </p>
                     </CardContent>
                 </Card>

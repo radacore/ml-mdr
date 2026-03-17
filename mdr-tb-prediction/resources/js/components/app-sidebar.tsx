@@ -30,6 +30,7 @@ import {
     LogOut,
     ChevronUp,
     Stethoscope,
+    Settings,
 } from "lucide-react";
 
 const menuItems = [
@@ -63,10 +64,18 @@ const menuItems = [
         href: "/training-data",
         routeName: "training-data.index",
     },
+    {
+        title: "Pengaturan",
+        icon: Settings,
+        href: "/settings",
+        routeName: "settings.index",
+    },
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage().props as { auth: { user: { name: string; email: string } } };
+    const { auth } = usePage().props as {
+        auth: { user: { name: string; email: string } };
+    };
     const user = auth.user;
 
     const getInitials = (name: string) => {
@@ -89,8 +98,8 @@ export function AppSidebar() {
                                     <Stethoscope className="size-4" />
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-semibold">MDR-TB</span>
-                                    <span className="text-xs text-muted-foreground">Prediction System</span>
+                                    <span className="font-semibold">SRI-Predict</span>
+                                    <span className="text-xs text-muted-foreground">TB-MDR</span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>
@@ -107,7 +116,12 @@ export function AppSidebar() {
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton
                                         asChild
-                                        isActive={route().current(item.routeName) || route().current(item.routeName + ".*")}
+                                        isActive={
+                                            route().current(item.routeName) ||
+                                            route().current(
+                                                item.routeName + ".*",
+                                            )
+                                        }
                                         tooltip={item.title}
                                     >
                                         <Link href={item.href}>
@@ -137,8 +151,12 @@ export function AppSidebar() {
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-semibold">{user.name}</span>
-                                        <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                                        <span className="truncate font-semibold">
+                                            {user.name}
+                                        </span>
+                                        <span className="truncate text-xs text-muted-foreground">
+                                            {user.email}
+                                        </span>
                                     </div>
                                     <ChevronUp className="ml-auto size-4" />
                                 </SidebarMenuButton>
@@ -150,14 +168,22 @@ export function AppSidebar() {
                                 sideOffset={4}
                             >
                                 <DropdownMenuItem asChild>
-                                    <Link href={route('profile.edit')} className="gap-2">
+                                    <Link
+                                        href={route("profile.edit")}
+                                        className="gap-2"
+                                    >
                                         <User className="size-4" />
                                         Profil
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
-                                    <Link href={route('logout')} method="post" as="button" className="w-full gap-2 text-destructive">
+                                    <Link
+                                        href={route("logout")}
+                                        method="post"
+                                        as="button"
+                                        className="w-full gap-2 text-destructive"
+                                    >
                                         <LogOut className="size-4" />
                                         Logout
                                     </Link>

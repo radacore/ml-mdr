@@ -2,17 +2,18 @@
 Model Training Module untuk Prediksi Keberhasilan Pengobatan MDR-TB
 
 Modul ini menangani:
-- Training model: Logistic Regression, Decision Tree, KNN, SVM
+- Training model: Logistic Regression, Decision Tree, SVM
+- 3-Way Data Split (Training/Validation/Test)
+- Hyperparameter Tuning (GridSearchCV)
 - K-Fold Cross Validation
 - Model evaluation dan selection
 """
 
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -31,6 +32,7 @@ class ModelTrainer:
         self.best_model_name: str = None
         self.best_model: Pipeline = None
         self.cv_results: Dict[str, Dict[str, float]] = {}
+        self.best_params: Dict[str, Dict] = {}
         self.scaler = StandardScaler()
         
         # Inisialisasi model-model
@@ -44,37 +46,77 @@ class ModelTrainer:
                 ('classifier', LogisticRegression(
                     random_state=self.random_state,
                     max_iter=1000,
-                    solver='liblinear'
+                    class_weight='balanced'
                 ))
             ]),
             'Decision Tree': Pipeline([
                 ('scaler', StandardScaler()),
                 ('classifier', DecisionTreeClassifier(
                     random_state=self.random_state,
-                    max_depth=10,
-                    min_samples_split=5
-                ))
-            ]),
-            'K-Nearest Neighbor': Pipeline([
-                ('scaler', StandardScaler()),
-                ('classifier', KNeighborsClassifier(
-                    n_neighbors=5,
-                    weights='distance'
                 ))
             ]),
             'Support Vector Machine': Pipeline([
                 ('scaler', StandardScaler()),
                 ('classifier', SVC(
                     random_state=self.random_state,
-                    kernel='rbf',
-                    probability=True
+                    probability=True,
+                    class_weight='balanced'
                 ))
             ])
         }
     
+    def _get_param_grids(self) -> Dict[str, Dict]:
+        """Mendapatkan parameter grid untuk hyperparameter tuning"""
+        return {
+            'Logistic Regression': {
+                'classifier__C': [0.01, 0.1, 1, 10, 100],
+                'classifier__penalty': ['l1', 'l2'],
+                'classifier__solver': ['liblinear'],
+            },
+            'Decision Tree': {
+                'classifier__max_depth': [3, 5, 7, 10, None],
+                'classifier__min_samples_split': [2, 5, 10],
+                'classifier__min_samples_leaf': [1, 2, 4],
+                'classifier__criterion': ['gini', 'entropy'],
+            },
+            'Support Vector Machine': {
+                'classifier__C': [0.1, 1, 10, 100],
+                'classifier__kernel': ['rbf', 'linear'],
+                'classifier__gamma': ['scale', 'auto'],
+            }
+        }
+    
+    def split_data_3way(self, X: pd.DataFrame, y: pd.Series,
+                        val_size: float = 0.15, test_size: float = 0.15) -> Tuple:
+        """
+        Membagi data menjadi training, validation, dan testing set (3-way split)
+        Rasio default: 70% train / 15% val / 15% test
+        """
+        # Pertama: pisahkan test set
+        # test_size relatif terhadap total = 0.15
+        X_temp, X_test, y_temp, y_test = train_test_split(
+            X, y,
+            test_size=test_size,
+            random_state=self.random_state,
+            stratify=y
+        )
+        
+        # Kedua: pisahkan val set dari sisa (val_size relatif terhadap sisa)
+        # val_size = 0.15 dari total, sisa = 0.85
+        # jadi val relatif terhadap sisa = 0.15 / 0.85 ≈ 0.176
+        val_relative = val_size / (1 - test_size)
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_temp, y_temp,
+            test_size=val_relative,
+            random_state=self.random_state,
+            stratify=y_temp
+        )
+        
+        return X_train, X_val, X_test, y_train, y_val, y_test
+    
     def split_data(self, X: pd.DataFrame, y: pd.Series, test_size: float = 0.2) -> Tuple:
         """
-        Membagi data menjadi training dan testing set
+        Membagi data menjadi training dan testing set (backward compatibility)
         """
         X_train, X_test, y_train, y_test = train_test_split(
             X, y,
@@ -84,9 +126,58 @@ class ModelTrainer:
         )
         return X_train, X_test, y_train, y_test
     
+    def hyperparameter_tuning(self, X_train: pd.DataFrame, y_train: pd.Series) -> Dict[str, Dict]:
+        """
+        Melakukan Hyperparameter Tuning menggunakan GridSearchCV
+        untuk semua model pada data training.
+        
+        Returns:
+            Dictionary berisi parameter terbaik untuk setiap model
+        """
+        param_grids = self._get_param_grids()
+        cv = StratifiedKFold(n_splits=self.n_folds, shuffle=True, random_state=self.random_state)
+        
+        best_params = {}
+        
+        for name, model in self.models.items():
+            print(f"\nTuning {name}...")
+            
+            grid_search = GridSearchCV(
+                estimator=model,
+                param_grid=param_grids[name],
+                cv=cv,
+                scoring='f1',
+                n_jobs=1,
+                verbose=0,
+                refit=True
+            )
+            
+            grid_search.fit(X_train, y_train)
+            
+            # Simpan model terbaik (yang sudah di-refit)
+            self.models[name] = grid_search.best_estimator_
+            
+            # Simpan parameter terbaik (bersihkan prefix 'classifier__')
+            clean_params = {}
+            for k, v in grid_search.best_params_.items():
+                clean_key = k.replace('classifier__', '')
+                clean_params[clean_key] = v
+            
+            best_params[name] = {
+                'params': clean_params,
+                'best_cv_score': float(grid_search.best_score_),
+            }
+            
+            print(f"  Best params: {clean_params}")
+            print(f"  Best CV F1: {grid_search.best_score_:.4f}")
+        
+        self.best_params = best_params
+        return best_params
+    
     def cross_validate(self, X: pd.DataFrame, y: pd.Series) -> Dict[str, Dict[str, float]]:
         """
         Melakukan K-Fold Cross Validation untuk semua model
+        (Setelah hyperparameter tuning, sehingga menggunakan model yang sudah optimal)
         
         Returns:
             Dictionary berisi hasil CV untuk setiap model
@@ -117,7 +208,7 @@ class ModelTrainer:
     
     def train_all_models(self, X_train: pd.DataFrame, y_train: pd.Series):
         """
-        Melatih semua model pada data training
+        Melatih semua model pada data training (final fit setelah tuning)
         """
         for name, model in self.models.items():
             print(f"Training {name}...")
@@ -135,36 +226,47 @@ class ModelTrainer:
             
             print(f"\nBest model: {self.best_model_name} (F1: {best_f1:.4f})")
     
-    def train(self, X: pd.DataFrame, y: pd.Series, test_size: float = 0.2) -> Dict:
+    def train(self, X: pd.DataFrame, y: pd.Series) -> Dict:
         """
         Pipeline training lengkap:
-        1. Split data
-        2. Cross validation
-        3. Train all models
-        4. Select best model
+        1. Split data 3-way (70/15/15)
+        2. Hyperparameter Tuning (GridSearchCV pada data training)
+        3. Cross Validation (pada data training dengan model optimal)
+        4. Train final models pada data training
+        5. Select best model
         
         Returns:
             Dictionary berisi hasil training
         """
-        # Split data
-        X_train, X_test, y_train, y_test = self.split_data(X, y, test_size)
+        # 3-way split: 70% train, 15% val, 15% test
+        X_train, X_val, X_test, y_train, y_val, y_test = self.split_data_3way(X, y)
         
         print(f"Training set size: {len(X_train)}")
+        print(f"Validation set size: {len(X_val)}")
         print(f"Test set size: {len(X_test)}")
         
-        # Cross validation
+        # Hyperparameter tuning (GridSearchCV on training data)
+        print("\n=== Hyperparameter Tuning ===")
+        best_params = self.hyperparameter_tuning(X_train, y_train)
+        
+        # Cross validation (with tuned models on training data)
+        print("\n=== Cross Validation ===")
         cv_results = self.cross_validate(X_train, y_train)
         
-        # Train models
+        # Final training (refit on full training data with best params)
+        print("\n=== Final Training ===")
         self.train_all_models(X_train, y_train)
         
         return {
             'X_train': X_train,
+            'X_val': X_val,
             'X_test': X_test,
             'y_train': y_train,
+            'y_val': y_val,
             'y_test': y_test,
             'cv_results': cv_results,
-            'best_model_name': self.best_model_name
+            'best_model_name': self.best_model_name,
+            'best_params': best_params,
         }
     
     def predict(self, X: pd.DataFrame, model_name: str = None) -> np.ndarray:
@@ -204,7 +306,8 @@ class ModelTrainer:
         # Simpan info model terbaik
         best_info = {
             'best_model_name': self.best_model_name,
-            'cv_results': self.cv_results
+            'cv_results': self.cv_results,
+            'best_params': self.best_params,
         }
         joblib.dump(best_info, os.path.join(directory, 'best_model_info.pkl'))
     
@@ -212,7 +315,7 @@ class ModelTrainer:
         """
         Memuat semua model dari direktori
         """
-        for name in self.models.keys():
+        for name in list(self.models.keys()):
             filename = name.replace(' ', '_').lower() + '.pkl'
             filepath = os.path.join(directory, filename)
             if os.path.exists(filepath):
@@ -225,6 +328,7 @@ class ModelTrainer:
             best_info = joblib.load(best_info_path)
             self.best_model_name = best_info.get('best_model_name')
             self.cv_results = best_info.get('cv_results', {})
+            self.best_params = best_info.get('best_params', {})
             if self.best_model_name:
                 self.best_model = self.models.get(self.best_model_name)
 
@@ -232,19 +336,17 @@ class ModelTrainer:
 if __name__ == "__main__":
     from preprocessing import DataPreprocessor
     
-    # Load dan preprocess data
     preprocessor = DataPreprocessor()
     df = preprocessor.load_data("../data/data_uji_ml.csv")
     df_processed = preprocessor.preprocess(df)
     X, y = preprocessor.get_features_and_target(df_processed)
     
-    # Train models
     trainer = ModelTrainer(n_folds=5)
-    results = trainer.train(X, y, test_size=0.2)
+    results = trainer.train(X, y)
     
-    # Save models
     trainer.save_models("../models")
     preprocessor.save("../models/preprocessor.pkl")
     
     print("\n=== Training Complete ===")
     print(f"Best Model: {results['best_model_name']}")
+    print(f"Best Params: {results['best_params']}")

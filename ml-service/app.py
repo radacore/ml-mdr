@@ -38,6 +38,7 @@ evaluator = None
 is_trained = False
 training_results = None
 evaluation_results = None
+comparison_table = None
 
 
 def get_project_root():
@@ -68,7 +69,7 @@ def fetch_training_data_from_database():
 
 def load_or_train_models():
     """Load model dari file atau train dari database"""
-    global preprocessor, trainer, evaluator, is_trained, training_results, evaluation_results
+    global preprocessor, trainer, evaluator, is_trained, training_results, evaluation_results, comparison_table
     
     models_dir = os.path.join(get_project_root(), 'models')
     preprocessor_path = os.path.join(models_dir, 'preprocessor.pkl')
@@ -92,15 +93,20 @@ def load_or_train_models():
                     df_processed = preprocessor.preprocess(df, fit=False)
                     X, y = preprocessor.get_features_and_target(df_processed)
                     
-                    # Split data untuk evaluasi
-                    from sklearn.model_selection import train_test_split
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                    # Split data untuk evaluasi menggunakan 3-way split yang sama
+                    X_train, X_val, X_test, y_train, y_val, y_test = trainer.split_data_3way(X, y)
                     
                     # Evaluate
                     evaluation_results = evaluator.evaluate_all_models(
                         trainer.models,
                         X_test,
                         y_test
+                    )
+                    # Compute train/test comparison table
+                    comparison_table = evaluator.evaluate_train_test(
+                        trainer.models,
+                        X_train, y_train,
+                        X_test, y_test
                     )
                     print("Evaluation completed for loaded models")
                 except Exception as e:
@@ -120,13 +126,19 @@ def load_or_train_models():
             df_processed = preprocessor.preprocess(df)
             X, y = preprocessor.get_features_and_target(df_processed)
             
-            training_results = trainer.train(X, y, test_size=0.2)
+            training_results = trainer.train(X, y)
             
             # Evaluate
             evaluation_results = evaluator.evaluate_all_models(
                 trainer.models,
                 training_results['X_test'],
                 training_results['y_test']
+            )
+            # Compute train/test comparison table
+            comparison_table = evaluator.evaluate_train_test(
+                trainer.models,
+                training_results['X_train'], training_results['y_train'],
+                training_results['X_test'], training_results['y_test']
             )
             
             # Save models
@@ -208,7 +220,7 @@ def train_models():
 @app.route('/retrain', methods=['POST'])
 def retrain_models():
     """Retrain model dengan data yang dikirim langsung dari Laravel"""
-    global training_results, evaluation_results, is_trained, preprocessor, trainer, evaluator
+    global training_results, evaluation_results, is_trained, preprocessor, trainer, evaluator, comparison_table
     
     try:
         # Get data from request body 
@@ -233,7 +245,6 @@ def retrain_models():
             'status_bekerja': 'Status Bekerja',
             'bb': 'BB',
             'tb': 'TB',
-            'imt': 'IMT',
             'status_gizi': 'Status Gizi',
             'status_merokok': 'Status Merokok',
             'pemeriksaan_kontak': 'Pemeriksaan Kontak',
@@ -262,14 +273,20 @@ def retrain_models():
         df_processed = preprocessor.preprocess(df)
         X, y = preprocessor.get_features_and_target(df_processed)
         
-        # Train
-        training_results = trainer.train(X, y, test_size=0.2)
+        # Train (includes 3-way split, hyperparameter tuning, CV)
+        training_results = trainer.train(X, y)
         
         # Evaluate
         evaluation_results = evaluator.evaluate_all_models(
             trainer.models,
             training_results['X_test'],
             training_results['y_test']
+        )
+        # Compute train/test comparison table
+        comparison_table = evaluator.evaluate_train_test(
+            trainer.models,
+            training_results['X_train'], training_results['y_train'],
+            training_results['X_test'], training_results['y_test']
         )
         
         # Save
@@ -320,9 +337,8 @@ def predict():
         probabilities = trainer.predict_proba(input_processed, model_name)
         
         # Decode prediction
-        target_encoder = preprocessor.label_encoders.get('Keberhasilan Pengobatan')
-        if target_encoder:
-            prediction_label = target_encoder.inverse_transform(prediction)[0]
+        if 'Keberhasilan Pengobatan' in preprocessor.label_decoders:
+            prediction_label = preprocessor.decode_value('Keberhasilan Pengobatan', int(prediction[0]))
         else:
             prediction_label = 'Berhasil' if prediction[0] == 0 else 'Tidak Berhasil'
         
@@ -366,7 +382,9 @@ def get_statistics():
     return jsonify({
         'evaluation_results': evaluation_results,
         'best_model': trainer.best_model_name if trainer else None,
-        'cv_results': trainer.cv_results if trainer else None
+        'cv_results': trainer.cv_results if trainer else None,
+        'comparison_table': comparison_table,
+        'best_params': trainer.best_params if trainer else None
     })
 
 

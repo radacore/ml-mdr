@@ -12,6 +12,7 @@ class Prediction extends Model
 
     protected $fillable = [
         'user_id',
+        'slug',
         'patient_data',
         'prediction_result',
         'model_used',

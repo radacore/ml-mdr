@@ -20,8 +20,8 @@ class TrainingDataController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('jenis_kelamin', 'like', "%{$search}%")
-                  ->orWhere('status_gizi', 'like', "%{$search}%")
-                  ->orWhere('keberhasilan_pengobatan', 'like', "%{$search}%");
+                    ->orWhere('status_gizi', 'like', "%{$search}%")
+                    ->orWhere('keberhasilan_pengobatan', 'like', "%{$search}%");
             });
         }
 
@@ -32,13 +32,18 @@ class TrainingDataController extends Controller
 
         $trainingData = $query->orderBy('created_at', 'desc')->paginate(15);
 
+        $total = TrainingData::count();
+
         return Inertia::render('TrainingData/Index', [
             'trainingData' => $trainingData,
             'filters' => $request->only(['search', 'outcome']),
             'stats' => [
-                'total' => TrainingData::count(),
+                'total' => $total,
                 'berhasil' => TrainingData::where('keberhasilan_pengobatan', 'Berhasil')->count(),
                 'tidak_berhasil' => TrainingData::where('keberhasilan_pengobatan', 'Tidak Berhasil')->count(),
+                'data_training' => (int)round($total * 0.70),
+                'data_validation' => (int)round($total * 0.15),
+                'data_testing' => (int)round($total * 0.15),
             ],
         ]);
     }

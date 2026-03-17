@@ -7,8 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { useState } from 'react';
-import { Plus, Search, Trash2, Edit, RefreshCw, Database, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, RefreshCw, Database, CheckCircle2, AlertCircle, Brain, FlaskConical, Percent, SplitSquareVertical, Columns3, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
+import TerminalRetrainModal from '@/components/TerminalRetrainModal';
 
 interface TrainingDataItem {
     id: number;
@@ -51,13 +52,18 @@ interface Props {
         total: number;
         berhasil: number;
         tidak_berhasil: number;
+        data_training: number;
+        data_validation: number;
+        data_testing: number;
+        jumlah_fitur: number;
+        model_aktif: number;
     };
 }
 
 export default function Index({ trainingData, filters, stats }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [isRetraining, setIsRetraining] = useState(false);
-    const [retrainResult, setRetrainResult] = useState<any>(null);
+    const [showTerminal, setShowTerminal] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -84,28 +90,8 @@ export default function Index({ trainingData, filters, stats }: Props) {
         });
     };
 
-    const handleRetrain = async () => {
-        setIsRetraining(true);
-        setRetrainResult(null);
-
-        try {
-            const response = await fetch('/api/retrain', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-            const result = await response.json();
-            setRetrainResult(result);
-            if (result.error) {
-                toast.error(result.message || 'Gagal melakukan retrain');
-            } else {
-                toast.success('Model berhasil dilatih ulang!');
-            }
-        } catch (error) {
-            setRetrainResult({ error: 'Gagal melakukan retrain' });
-            toast.error('Gagal melakukan retrain');
-        } finally {
-            setIsRetraining(false);
-        }
+    const handleRetrain = () => {
+        setShowTerminal(true);
     };
 
     return (
@@ -114,45 +100,68 @@ export default function Index({ trainingData, filters, stats }: Props) {
 
             <div className="space-y-6">
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+                    {/* Card 1: Distribusi Data */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Data</CardTitle>
                             <Database className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.total}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Berhasil</CardTitle>
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-green-600">{stats.berhasil}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Tidak Berhasil</CardTitle>
-                            <XCircle className="h-4 w-4 text-red-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-red-600">{stats.tidak_berhasil}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Rasio Keberhasilan</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {stats.total > 0 ? ((stats.berhasil / stats.total) * 100).toFixed(1) : 0}%
+                            <div className="text-2xl font-bold mb-3">{stats.total}</div>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                        <span>Berhasil</span>
+                                    </div>
+                                    <span className="font-semibold text-green-600">{stats.berhasil}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle className="h-4 w-4 text-red-500" />
+                                        <span>Tidak Berhasil</span>
+                                    </div>
+                                    <span className="font-semibold text-red-600">{stats.tidak_berhasil}</span>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Card 2: Pembagian Data */}
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pembagian Data</CardTitle>
+                            <Brain className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-purple-500" />
+                                        <span>Training</span>
+                                    </div>
+                                    <span className="font-semibold text-purple-600">70% <span className="text-muted-foreground font-normal">({stats.data_training})</span></span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-orange-500" />
+                                        <span>Validation</span>
+                                    </div>
+                                    <span className="font-semibold text-orange-600">15% <span className="text-muted-foreground font-normal">({stats.data_validation})</span></span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-purple-500" />
+                                        <span>Testing</span>
+                                    </div>
+                                    <span className="font-semibold text-purple-600">15% <span className="text-muted-foreground font-normal">({stats.data_testing})</span></span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                 </div>
 
                 {/* Actions */}
@@ -179,7 +188,7 @@ export default function Index({ trainingData, filters, stats }: Props) {
                                     disabled={isRetraining}
                                 >
                                     <RefreshCw className={`h-4 w-4 mr-2 ${isRetraining ? 'animate-spin' : ''}`} />
-                                    {isRetraining ? 'Melatih...' : 'Retrain Model'}
+                                    Retrain Model
                                 </Button>
                                 <Link href={route('training-data.create')}>
                                     <Button>
@@ -189,22 +198,6 @@ export default function Index({ trainingData, filters, stats }: Props) {
                                 </Link>
                             </div>
                         </div>
-
-                        {/* Retrain Result */}
-                        {retrainResult && (
-                            <div className={`mt-4 p-4 rounded-lg ${retrainResult.error ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800'}`}>
-                                {retrainResult.error ? (
-                                    <p>{retrainResult.message || retrainResult.error}</p>
-                                ) : (
-                                    <div>
-                                        <p className="font-semibold">Model berhasil dilatih ulang!</p>
-                                        {retrainResult.best_model && (
-                                            <p>Best Model: {retrainResult.best_model}</p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
 
@@ -315,6 +308,12 @@ export default function Index({ trainingData, filters, stats }: Props) {
                 title="Hapus Data Training"
                 description="Apakah Anda yakin ingin menghapus data training ini? Tindakan ini tidak dapat dibatalkan."
                 isLoading={isDeleting}
+            />
+
+            <TerminalRetrainModal
+                open={showTerminal}
+                onClose={() => setShowTerminal(false)}
+                totalData={stats.total}
             />
         </AppLayout>
     );
