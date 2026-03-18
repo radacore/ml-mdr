@@ -25,7 +25,7 @@ import os
 class ModelTrainer:
     """Kelas untuk training dan evaluasi model machine learning"""
     
-    def __init__(self, n_folds: int = 5, random_state: int = 42):
+    def __init__(self, n_folds: int = 5, random_state: int = 4):
         self.n_folds = n_folds
         self.random_state = random_state
         self.models: Dict[str, Pipeline] = {}
