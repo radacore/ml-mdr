@@ -1,6 +1,6 @@
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/Components/ui/sidebar";
+import { AppSidebar } from "@/Components/app-sidebar";
+import { Separator } from "@/Components/ui/separator";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -8,8 +8,8 @@ import {
     BreadcrumbList,
     BreadcrumbPage,
     BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Toaster } from "@/components/ui/sonner";
+} from "@/Components/ui/breadcrumb";
+import { Toaster } from "@/Components/ui/sonner";
 import { Fragment, PropsWithChildren, ReactNode } from "react";
 
 interface Props extends PropsWithChildren {

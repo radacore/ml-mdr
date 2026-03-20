@@ -1,7 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import { ChevronDown } from 'lucide-react';

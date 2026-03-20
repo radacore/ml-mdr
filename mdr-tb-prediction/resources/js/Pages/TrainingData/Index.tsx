@@ -1,15 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Input } from '@/Components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
+import { Badge } from '@/Components/ui/badge';
+import { DeleteConfirmModal } from '@/Components/DeleteConfirmModal';
 import { useState } from 'react';
 import { Plus, Search, Trash2, Edit, RefreshCw, Database, CheckCircle2, AlertCircle, Brain, FlaskConical, Percent, SplitSquareVertical, Columns3, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
-import TerminalRetrainModal from '@/components/TerminalRetrainModal';
+import TerminalRetrainModal from '@/Components/TerminalRetrainModal';
 
 interface TrainingDataItem {
     id: number;

@@ -1,23 +1,23 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
     CardDescription,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/Components/ui/card";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from "@/Components/ui/select";
+import { Alert, AlertDescription } from "@/Components/ui/alert";
 import { FormEventHandler, useState } from "react";
 import {
     User,

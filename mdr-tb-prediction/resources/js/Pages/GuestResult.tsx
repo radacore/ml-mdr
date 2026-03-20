@@ -1,11 +1,11 @@
 import { Head } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, RadialBarChart, RadialBar } from 'recharts';
 import { Copy, Check, ArrowLeft } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import Navbar from '@/Components/Navbar';
+import Footer from '@/Components/Footer';
 import { useState } from 'react';
 import { getDecodedValue } from '@/Pages/Prediction/Show';
 

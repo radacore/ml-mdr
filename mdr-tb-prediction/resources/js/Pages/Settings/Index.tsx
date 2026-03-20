@@ -1,9 +1,9 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Label } from '@/Components/ui/label';
+import { Switch } from '@/Components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
 
