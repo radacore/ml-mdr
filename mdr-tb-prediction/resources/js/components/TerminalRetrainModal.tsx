@@ -168,7 +168,7 @@ export default function TerminalRetrainModal({ open, onClose, totalData }: Props
 
         if (abortRef.current) return;
 
-        const result: RetrainResult | null = apiResultRef.current;
+        const result = apiResultRef.current as RetrainResult | null;
 
         if (result?.error) {
             setHasError(true);
