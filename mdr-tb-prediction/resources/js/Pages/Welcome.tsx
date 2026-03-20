@@ -1,13 +1,13 @@
 import { Head, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
-import { Input } from '@/Components/ui/input';
-import { Label } from '@/Components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
-import { Alert, AlertDescription } from '@/Components/ui/alert';
-import Navbar from '@/Components/Navbar';
-import Footer from '@/Components/Footer';
+import { Button } from '@/ShadcnComponents/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ShadcnComponents/ui/card';
+import { Input } from '@/ShadcnComponents/ui/input';
+import { Label } from '@/ShadcnComponents/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ShadcnComponents/ui/select';
+import { Alert, AlertDescription } from '@/ShadcnComponents/ui/alert';
+import Navbar from '@/ShadcnComponents/Navbar';
+import Footer from '@/ShadcnComponents/Footer';
 import { BrainCircuit, Activity, Users, ExternalLink, Check, Copy } from 'lucide-react';
 
 interface FormData {

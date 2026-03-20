@@ -1,9 +1,9 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
-import { Alert, AlertDescription } from '@/Components/ui/alert';
+import { Button } from '@/ShadcnComponents/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ShadcnComponents/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ShadcnComponents/ui/table';
+import { Alert, AlertDescription } from '@/ShadcnComponents/ui/alert';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 

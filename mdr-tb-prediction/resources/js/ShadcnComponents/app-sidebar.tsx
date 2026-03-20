@@ -10,15 +10,15 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
-} from "@/Components/ui/sidebar";
+} from "@/ShadcnComponents/ui/sidebar";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/Components/ui/avatar";
+} from "@/ShadcnComponents/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/ShadcnComponents/ui/avatar";
 import { Link, usePage } from "@inertiajs/react";
 import {
     LayoutDashboard,

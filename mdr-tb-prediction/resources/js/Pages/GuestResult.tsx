@@ -1,11 +1,11 @@
 import { Head } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
-import { Button } from '@/Components/ui/button';
-import { Input } from '@/Components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ShadcnComponents/ui/card';
+import { Button } from '@/ShadcnComponents/ui/button';
+import { Input } from '@/ShadcnComponents/ui/input';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, RadialBarChart, RadialBar } from 'recharts';
 import { Copy, Check, ArrowLeft } from 'lucide-react';
-import Navbar from '@/Components/Navbar';
-import Footer from '@/Components/Footer';
+import Navbar from '@/ShadcnComponents/Navbar';
+import Footer from '@/ShadcnComponents/Footer';
 import { useState } from 'react';
 import { getDecodedValue } from '@/Pages/Prediction/Show';
 

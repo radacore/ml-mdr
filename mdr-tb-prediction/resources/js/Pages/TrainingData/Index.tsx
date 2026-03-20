@@ -1,15 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
-import { Input } from '@/Components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
-import { Badge } from '@/Components/ui/badge';
-import { DeleteConfirmModal } from '@/Components/DeleteConfirmModal';
+import { Button } from '@/ShadcnComponents/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/ShadcnComponents/ui/card';
+import { Input } from '@/ShadcnComponents/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ShadcnComponents/ui/table';
+import { Badge } from '@/ShadcnComponents/ui/badge';
+import { DeleteConfirmModal } from '@/ShadcnComponents/DeleteConfirmModal';
 import { useState } from 'react';
 import { Plus, Search, Trash2, Edit, RefreshCw, Database, CheckCircle2, AlertCircle, Brain, FlaskConical, Percent, SplitSquareVertical, Columns3, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
-import TerminalRetrainModal from '@/Components/TerminalRetrainModal';
+import TerminalRetrainModal from '@/ShadcnComponents/TerminalRetrainModal';
 
 interface TrainingDataItem {
     id: number;

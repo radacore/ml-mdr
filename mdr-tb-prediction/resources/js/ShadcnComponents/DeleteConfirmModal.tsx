@@ -7,7 +7,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@/Components/ui/alert-dialog";
+} from "@/ShadcnComponents/ui/alert-dialog";
 
 interface DeleteConfirmModalProps {
     open: boolean;

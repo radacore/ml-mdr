@@ -1,11 +1,11 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
-import { DeleteConfirmModal } from '@/Components/DeleteConfirmModal';
+import { Button } from '@/ShadcnComponents/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/ShadcnComponents/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ShadcnComponents/ui/table';
+import { DeleteConfirmModal } from '@/ShadcnComponents/DeleteConfirmModal';
 import { Trash2, ExternalLink } from 'lucide-react';
-import { Badge } from '@/Components/ui/badge';
+import { Badge } from '@/ShadcnComponents/ui/badge';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { getDecodedValue } from './Show';

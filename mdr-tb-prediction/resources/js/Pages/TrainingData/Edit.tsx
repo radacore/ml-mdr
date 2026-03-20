@@ -1,11 +1,11 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
-import { Input } from '@/Components/ui/input';
-import { Label } from '@/Components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
-import { Textarea } from '@/Components/ui/textarea';
+import { Button } from '@/ShadcnComponents/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ShadcnComponents/ui/card';
+import { Input } from '@/ShadcnComponents/ui/input';
+import { Label } from '@/ShadcnComponents/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ShadcnComponents/ui/select';
+import { Textarea } from '@/ShadcnComponents/ui/textarea';
 import { ArrowLeft, Save } from 'lucide-react';
 
 interface TrainingDataItem {

@@ -1,15 +1,15 @@
 import { Head, Link, useForm } from "@inertiajs/react";
 import { FormEventHandler } from "react";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/ShadcnComponents/ui/button";
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
+} from "@/ShadcnComponents/ui/card";
+import { Input } from "@/ShadcnComponents/ui/input";
+import { Label } from "@/ShadcnComponents/ui/label";
 import { Activity } from "lucide-react";
 
 export default function Login({

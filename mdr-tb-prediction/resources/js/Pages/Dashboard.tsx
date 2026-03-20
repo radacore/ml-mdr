@@ -1,7 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
-import { Button } from '@/Components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ShadcnComponents/ui/card';
+import { Button } from '@/ShadcnComponents/ui/button';
 import { Activity, History, BarChart3, Database, ArrowRight, Stethoscope } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';

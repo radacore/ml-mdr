@@ -16,8 +16,8 @@ import {
     DollarSign,
     Users,
 } from "lucide-react";
-import Navbar from "@/Components/Navbar";
-import Footer from "@/Components/Footer";
+import Navbar from "@/ShadcnComponents/Navbar";
+import Footer from "@/ShadcnComponents/Footer";
 import axios from "axios";
 import { useState } from "react";
 

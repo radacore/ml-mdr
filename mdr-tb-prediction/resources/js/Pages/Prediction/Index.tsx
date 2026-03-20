@@ -1,23 +1,23 @@
 import AppLayout from "@/Layouts/AppLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/ShadcnComponents/ui/button";
 import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
     CardDescription,
-} from "@/Components/ui/card";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
+} from "@/ShadcnComponents/ui/card";
+import { Input } from "@/ShadcnComponents/ui/input";
+import { Label } from "@/ShadcnComponents/ui/label";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/Components/ui/select";
-import { Alert, AlertDescription } from "@/Components/ui/alert";
+} from "@/ShadcnComponents/ui/select";
+import { Alert, AlertDescription } from "@/ShadcnComponents/ui/alert";
 import { FormEventHandler, useState } from "react";
 import {
     User,
