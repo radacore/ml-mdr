@@ -12,9 +12,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, classification_report, roc_auc_score
+    confusion_matrix, classification_report, roc_auc_score,
+    roc_curve, precision_recall_curve, average_precision_score,
+    brier_score_loss
 )
-from typing import Dict, Any
+from sklearn.calibration import calibration_curve
+from typing import Dict, Any, List, Tuple
 
 
 class ModelEvaluator:
@@ -116,8 +119,12 @@ class ModelEvaluator:
         
         for name, model in models.items():
             y_pred = model.predict(X_test)
+            try:
+                y_proba = model.predict_proba(X_test)[:, 1]
+            except Exception:
+                y_proba = None
             
-            metrics = self.evaluate(y_test, y_pred)
+            metrics = self.evaluate(y_test, y_pred, y_proba)
             cm = self.get_confusion_matrix(y_test, y_pred)
             
             results[name] = {
@@ -194,6 +201,167 @@ class ModelEvaluator:
 
         self.comparison_table = comparison
         return comparison
+
+    def get_roc_curve_data(self, model, X: pd.DataFrame, y: pd.Series) -> Dict[str, Any]:
+        """
+        Menghitung data ROC curve untuk satu model.
+        
+        Returns:
+            Dictionary berisi fpr, tpr, thresholds, auc
+        """
+        try:
+            y_proba = model.predict_proba(X)[:, 1]
+            fpr, tpr, thresholds = roc_curve(y, y_proba)
+            auc = float(roc_auc_score(y, y_proba))
+            return {
+                'fpr': [float(x) for x in fpr],
+                'tpr': [float(x) for x in tpr],
+                'thresholds': [float(x) for x in thresholds],
+                'auc': auc
+            }
+        except Exception as e:
+            print(f"Error computing ROC curve: {e}")
+            return {'fpr': [], 'tpr': [], 'thresholds': [], 'auc': 0.0}
+
+    def get_pr_curve_data(self, model, X: pd.DataFrame, y: pd.Series) -> Dict[str, Any]:
+        """
+        Menghitung data Precision-Recall curve untuk satu model.
+        
+        Returns:
+            Dictionary berisi precision, recall, thresholds, average_precision
+        """
+        try:
+            y_proba = model.predict_proba(X)[:, 1]
+            prec, rec, thresholds = precision_recall_curve(y, y_proba)
+            ap = float(average_precision_score(y, y_proba))
+            return {
+                'precision': [float(x) for x in prec],
+                'recall': [float(x) for x in rec],
+                'thresholds': [float(x) for x in thresholds],
+                'average_precision': ap
+            }
+        except Exception as e:
+            print(f"Error computing PR curve: {e}")
+            return {'precision': [], 'recall': [], 'thresholds': [], 'average_precision': 0.0}
+
+    def get_calibration_data(self, model, X: pd.DataFrame, y: pd.Series,
+                             n_bins: int = 10) -> Dict[str, Any]:
+        """
+        Menghitung data Calibration curve + Brier Score untuk satu model.
+        
+        Returns:
+            Dictionary berisi prob_true, prob_pred, brier_score
+        """
+        try:
+            y_proba = model.predict_proba(X)[:, 1]
+            prob_true, prob_pred = calibration_curve(y, y_proba, n_bins=n_bins, strategy='uniform')
+            brier = float(brier_score_loss(y, y_proba))
+            return {
+                'prob_true': [float(x) for x in prob_true],
+                'prob_pred': [float(x) for x in prob_pred],
+                'brier_score': brier
+            }
+        except Exception as e:
+            print(f"Error computing calibration curve: {e}")
+            return {'prob_true': [], 'prob_pred': [], 'brier_score': 1.0}
+
+    def bootstrap_ci(self, y_true: np.ndarray, y_pred: np.ndarray,
+                     y_proba: np.ndarray = None,
+                     n_iter: int = 1000, alpha: float = 0.05) -> Dict[str, Dict[str, float]]:
+        """
+        Menghitung Bootstrap 95% Confidence Interval untuk metrik evaluasi.
+        
+        Returns:
+            Dictionary: { metric_name: {mean, ci_lower, ci_upper} }
+        """
+        rng = np.random.RandomState(42)
+        n = len(y_true)
+        
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
+        if y_proba is not None:
+            y_proba = np.asarray(y_proba)
+        
+        boot_metrics = {
+            'accuracy': [],
+            'precision': [],
+            'recall': [],
+            'f1_score': [],
+            'specificity': [],
+            'auc_roc': []
+        }
+        
+        for _ in range(n_iter):
+            idx = rng.choice(n, size=n, replace=True)
+            bt_true = y_true[idx]
+            bt_pred = y_pred[idx]
+            
+            # Skip jika hanya satu kelas di sample
+            if len(np.unique(bt_true)) < 2:
+                continue
+            
+            boot_metrics['accuracy'].append(float(accuracy_score(bt_true, bt_pred)))
+            boot_metrics['precision'].append(float(precision_score(bt_true, bt_pred, zero_division=0)))
+            boot_metrics['recall'].append(float(recall_score(bt_true, bt_pred, zero_division=0)))
+            boot_metrics['f1_score'].append(float(f1_score(bt_true, bt_pred, zero_division=0)))
+            
+            cm = confusion_matrix(bt_true, bt_pred)
+            if cm.shape == (2, 2):
+                tn, fp, fn, tp = cm.ravel()
+                spec = float(tn / (tn + fp)) if (tn + fp) > 0 else 0.0
+            else:
+                spec = 0.0
+            boot_metrics['specificity'].append(spec)
+            
+            if y_proba is not None:
+                bt_proba = y_proba[idx]
+                try:
+                    boot_metrics['auc_roc'].append(float(roc_auc_score(bt_true, bt_proba)))
+                except Exception:
+                    pass
+        
+        results = {}
+        for metric_name, values in boot_metrics.items():
+            if len(values) > 0:
+                arr = np.array(values)
+                results[metric_name] = {
+                    'mean': float(np.mean(arr)),
+                    'ci_lower': float(np.percentile(arr, alpha / 2 * 100)),
+                    'ci_upper': float(np.percentile(arr, (1 - alpha / 2) * 100))
+                }
+            else:
+                results[metric_name] = {'mean': 0.0, 'ci_lower': 0.0, 'ci_upper': 0.0}
+        
+        return results
+
+    def get_all_curves(self, models: Dict, X_test: pd.DataFrame,
+                       y_test: pd.Series) -> Dict[str, Dict]:
+        """
+        Menghitung ROC, PR, dan Calibration curves untuk semua model.
+        """
+        curves = {}
+        for name, model in models.items():
+            curves[name] = {
+                'roc': self.get_roc_curve_data(model, X_test, y_test),
+                'pr': self.get_pr_curve_data(model, X_test, y_test),
+                'calibration': self.get_calibration_data(model, X_test, y_test)
+            }
+        return curves
+
+    def get_all_bootstrap_ci(self, models: Dict, X_test: pd.DataFrame,
+                              y_test: pd.Series, n_iter: int = 1000) -> Dict[str, Dict]:
+        """
+        Menghitung Bootstrap 95% CI untuk semua model.
+        """
+        ci_results = {}
+        for name, model in models.items():
+            y_pred = model.predict(X_test)
+            try:
+                y_proba = model.predict_proba(X_test)[:, 1]
+            except Exception:
+                y_proba = None
+            ci_results[name] = self.bootstrap_ci(y_test, y_pred, y_proba, n_iter=n_iter)
+        return ci_results
 
 
 if __name__ == "__main__":

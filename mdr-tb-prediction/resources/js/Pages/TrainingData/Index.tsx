@@ -64,6 +64,7 @@ export default function Index({ trainingData, filters, stats }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [isRetraining, setIsRetraining] = useState(false);
     const [showTerminal, setShowTerminal] = useState(false);
+    const [useSMOTE, setUseSMOTE] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -90,7 +91,8 @@ export default function Index({ trainingData, filters, stats }: Props) {
         });
     };
 
-    const handleRetrain = () => {
+    const handleRetrain = (withSMOTE: boolean) => {
+        setUseSMOTE(withSMOTE);
         setShowTerminal(true);
     };
 
@@ -184,11 +186,20 @@ export default function Index({ trainingData, filters, stats }: Props) {
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"
-                                    onClick={handleRetrain}
+                                    onClick={() => handleRetrain(false)}
                                     disabled={isRetraining}
                                 >
                                     <RefreshCw className={`h-4 w-4 mr-2 ${isRetraining ? 'animate-spin' : ''}`} />
-                                    Retrain Model
+                                    Retrain Tanpa SMOTE
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => handleRetrain(true)}
+                                    disabled={isRetraining}
+                                    className="border-purple-500 text-purple-600 hover:bg-purple-50"
+                                >
+                                    <RefreshCw className={`h-4 w-4 mr-2 ${isRetraining ? 'animate-spin' : ''}`} />
+                                    Retrain Dengan SMOTE
                                 </Button>
                                 <Link href={route('training-data.create')}>
                                     <Button>
@@ -314,6 +325,7 @@ export default function Index({ trainingData, filters, stats }: Props) {
                 open={showTerminal}
                 onClose={() => setShowTerminal(false)}
                 totalData={stats.total}
+                useSMOTE={useSMOTE}
             />
         </AppLayout>
     );

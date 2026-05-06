@@ -19,9 +19,10 @@ interface Props {
     open: boolean;
     onClose: () => void;
     totalData: number;
+    useSMOTE?: boolean;
 }
 
-export default function TerminalRetrainModal({ open, onClose, totalData }: Props) {
+export default function TerminalRetrainModal({ open, onClose, totalData, useSMOTE = false }: Props) {
     const [lines, setLines] = useState<{ text: string; color: string }[]>([]);
     const [isComplete, setIsComplete] = useState(false);
     const [hasError, setHasError] = useState(false);
@@ -61,6 +62,7 @@ export default function TerminalRetrainModal({ open, onClose, totalData }: Props
         fetch('/api/retrain', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ use_smote: useSMOTE }),
         })
             .then(res => res.json())
             .then(result => {
@@ -111,6 +113,17 @@ export default function TerminalRetrainModal({ open, onClose, totalData }: Props
             { text: `[INFO] Training: ${Math.round(totalData * 0.7)} data | Validation: ${Math.round(totalData * 0.15)} data | Testing: ${Math.round(totalData * 0.15)} data`, color: 'text-gray-400', delay: 1500 },
             { text: '[✓] Data berhasil dibagi (Stratified)', color: 'text-green-400', delay: 800 },
             { text: '', color: '', delay: 300 },
+
+            // SMOTE step
+            ...(useSMOTE ? [
+                { text: '[STEP 5.5] SMOTE Oversampling...', color: 'text-purple-400', delay: 1500 },
+                { text: '[INFO] Kelas minoritas terdeteksi, membuat data sintetis...', color: 'text-gray-400', delay: 2000 },
+                { text: `[✓] SMOTE selesai: kelas diseimbangkan`, color: 'text-green-400', delay: 800 },
+                { text: '', color: '', delay: 300 },
+            ] : [
+                { text: '[INFO] SMOTE dinonaktifkan — menggunakan class_weight=balanced', color: 'text-gray-400', delay: 800 },
+                { text: '', color: '', delay: 300 },
+            ]),
 
             // Step 6
             { text: '[STEP 6/9] Hyperparameter Tuning (GridSearchCV)...', color: 'text-yellow-400', delay: 2000 },
@@ -212,7 +225,7 @@ export default function TerminalRetrainModal({ open, onClose, totalData }: Props
         // Final summary
         addLine(' ', 'text-gray-700');
         addLine('════════════════════════════════════════════════════', 'text-yellow-400');
-        addLine('  🏆 TRAINING SELESAI!', 'text-white font-bold');
+        addLine(`  🏆 TRAINING SELESAI! ${useSMOTE ? '(dengan SMOTE)' : '(tanpa SMOTE)'}`, 'text-white font-bold');
         if (result?.best_model) {
             addLine(`  Model Terbaik: ${result.best_model}`, 'text-cyan-400');
         }

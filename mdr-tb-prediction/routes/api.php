@@ -146,7 +146,7 @@ Route::get('/training-data', function () {
     });
 
 // API endpoint untuk retrain model
-Route::post('/retrain', function () {
+Route::post('/retrain', function (Request $request) {
     $mlServiceUrl = env('ML_SERVICE_URL', 'http://localhost:5000');
 
     try {
@@ -159,9 +159,13 @@ Route::post('/retrain', function () {
             ], 400);
         }
 
+        // Check if SMOTE requested from frontend
+        $useSmote = $request->input('use_smote', false);
+
         // Send training data directly to ML service
         $response = Http::timeout(120)->post("{$mlServiceUrl}/retrain", [
-            'data' => $trainingData
+            'data' => $trainingData,
+            'use_smote' => $useSmote,
         ]);
 
         if ($response->successful()) {
@@ -188,3 +192,38 @@ use App\Http\Controllers\ActiveModelController;
 
 Route::get('/active-models', [ActiveModelController::class , 'index']);
 Route::post('/active-models', [ActiveModelController::class , 'update']);
+
+// API endpoint untuk komparasi SMOTE vs Non-SMOTE
+Route::post('/compare-smote', function (Request $request) {
+    $mlServiceUrl = env('ML_SERVICE_URL', 'http://localhost:5000');
+
+    try {
+        $trainingData = \App\Models\TrainingData::all()->toArray();
+
+        if (empty($trainingData)) {
+            return response()->json([
+                'error' => 'No training data available in database'
+            ], 400);
+        }
+
+        // Timeout 240s karena training 2 skenario + GridSearchCV
+        $response = Http::timeout(240)->post("{$mlServiceUrl}/compare-smote", [
+            'data' => $trainingData,
+        ]);
+
+        if ($response->successful()) {
+            return response()->json($response->json());
+        }
+
+        return response()->json([
+            'error' => 'ML Service error',
+            'message' => $response->body()
+        ], $response->status());
+    } catch (\Exception $e) {
+        Log::error('Compare-SMOTE error: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to connect to ML Service',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});

@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/prediction', [PredictionController::class , 'predict'])->name('prediction.predict');
     Route::get('/prediction/history', [PredictionController::class , 'history'])->name('prediction.history');
     Route::get('/prediction/statistics', [PredictionController::class , 'statistics'])->name('prediction.statistics');
+    Route::get('/prediction/compare-smote', [PredictionController::class , 'compareSmote'])->name('prediction.compare-smote');
     Route::delete('/prediction/{prediction}', [PredictionController::class , 'destroy'])->name('prediction.destroy');
     Route::get('/prediction/{prediction}', [PredictionController::class , 'show'])->name('prediction.show');
 

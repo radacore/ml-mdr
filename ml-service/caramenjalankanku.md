@@ -44,6 +44,12 @@ pip3 install -r requirements.txt
 - `gunicorn==21.2.0` - WSGI server
 - `python-dotenv==1.0.0` - Environment variables
 - `requests>=2.31.0` - HTTP client
+- `imbalanced-learn>=0.12.0` - SMOTE oversampling
+- `shap>=0.45.0` - SHAP interpretability (notebook)
+- `matplotlib>=3.8.0` - Plotting (notebook)
+- `seaborn>=0.13.0` - Statistical plots (notebook)
+- `scipy>=1.11.0` - Statistical functions
+- `jupyter>=1.0.0` - Jupyter notebook
 
 ---
 
@@ -91,7 +97,6 @@ curl http://localhost:5000/health
   "models_available": [
     "Logistic Regression",
     "Decision Tree",
-    "K-Nearest Neighbor",
     "Support Vector Machine"
   ]
 }
@@ -165,10 +170,14 @@ curl -X POST http://localhost:5000/predict \
 | `GET` | `/health` | Cek status server dan model |
 | `GET` | `/features` | Daftar fitur yang dibutuhkan untuk prediksi |
 | `GET` | `/models` | Info semua model yang tersedia |
-| `GET` | `/statistics` | Statistik evaluasi lengkap semua model |
+| `GET` | `/statistics` | Statistik evaluasi lengkap + bootstrap CI + class distribution |
+| `GET` | `/curves` | Data ROC, Precision-Recall, dan Calibration curve per model |
+| `GET` | `/calibration` | Data Calibration curve + Brier Score per model |
+| `GET` | `/interpretability` | Odds Ratio (LR), Feature Importance (DT), Permutation Importance (SVM) |
 | `POST` | `/predict` | Prediksi untuk single input |
 | `POST` | `/train` | Train model dengan data dari database Laravel |
-| `POST` | `/retrain` | Retrain model dengan data JSON |
+| `POST` | `/retrain` | Retrain model dengan data JSON (opsional: `use_smote: true`) |
+| `POST` | `/compare-smote` | Komparasi SMOTE vs Non-SMOTE (tidak menyentuh model produksi) |
 
 ---
 
@@ -185,14 +194,17 @@ ml-service/
 │   ├── preprocessor.pkl           # Data preprocessor
 │   ├── logistic_regression.pkl    # Model Logistic Regression
 │   ├── decision_tree.pkl          # Model Decision Tree
-│   ├── k-nearest_neighbor.pkl     # Model KNN
 │   ├── support_vector_machine.pkl # Model SVM
 │   └── best_model_info.pkl        # Info model terbaik
 ├── src/
 │   ├── __init__.py
 │   ├── preprocessing.py   # Data preprocessing module
-│   ├── training.py        # Model training module
-│   └── evaluation.py      # Model evaluation module
+│   ├── training.py        # Model training module (+ SMOTE support)
+│   ├── evaluation.py      # Model evaluation module (+ ROC, PR, Calibration, Bootstrap CI)
+│   └── interpretability.py # Odds Ratio, Feature Importance, Permutation Importance
+├── notebooks/
+│   ├── analysis_for_dissertation.ipynb  # Notebook figur disertasi
+│   └── figures/                         # Output figur PNG/PDF
 └── tests/                 # Test files
 ```
 
@@ -200,13 +212,12 @@ ml-service/
 
 ## 🤖 Model Machine Learning
 
-Project ini memiliki **4 model** yang dilatih:
+Project ini memiliki **3 model** yang dilatih:
 
 | Model | Deskripsi |
 |-------|-----------|
 | **Logistic Regression** | Model linear untuk klasifikasi biner |
 | **Decision Tree** | Model tree-based dengan max_depth=10 |
-| **K-Nearest Neighbor** | Model KNN dengan n_neighbors=5, weights='distance' |
 | **Support Vector Machine** | Model SVM dengan kernel RBF |
 
 **Best Model:** Support Vector Machine (F1 Score: ~0.85)
@@ -292,6 +303,33 @@ Cek firewall macOS atau gunakan port lain:
 ```bash
 python3 app.py --port 5001
 ```
+
+---
+
+## 📓 Menjalankan Jupyter Notebook
+
+Notebook `notebooks/analysis_for_dissertation.ipynb` menghasilkan semua figur publikasi untuk disertasi.
+
+```bash
+cd notebooks
+jupyter notebook analysis_for_dissertation.ipynb
+```
+
+**Figur yang dihasilkan:**
+- Correlation heatmap
+- Class distribution (pie + bar)
+- Bootstrap 95% CI
+- ROC & Precision-Recall curves
+- Confusion matrix heatmaps
+- Calibration curves + Brier scores
+- Feature importance (Decision Tree)
+- Odds Ratio forest plot (Logistic Regression)
+- Permutation importance (SVM)
+- SHAP summary, bar, dan waterfall plots
+- Nested cross-validation results
+- Sensitivity analysis
+
+Semua figur disimpan di `notebooks/figures/` dalam format PNG (300 DPI) dan PDF.
 
 ---
 

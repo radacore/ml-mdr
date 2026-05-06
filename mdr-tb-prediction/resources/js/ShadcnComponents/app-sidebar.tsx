@@ -31,6 +31,7 @@ import {
     ChevronUp,
     Stethoscope,
     Settings,
+    Scale,
 } from "lucide-react";
 
 const menuItems = [
@@ -57,6 +58,12 @@ const menuItems = [
         icon: BarChart3,
         href: "/prediction/statistics",
         routeName: "prediction.statistics",
+    },
+    {
+        title: "Komparasi SMOTE",
+        icon: Scale,
+        href: "/prediction/compare-smote",
+        routeName: "prediction.compare-smote",
     },
     {
         title: "Data Training",
@@ -98,8 +105,12 @@ export function AppSidebar() {
                                     <Stethoscope className="size-4" />
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-semibold">SRI-Predict</span>
-                                    <span className="text-xs text-muted-foreground">TB-MDR</span>
+                                    <span className="font-semibold">
+                                        SRI-Predict
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        TB-MDR
+                                    </span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>

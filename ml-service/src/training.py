@@ -226,14 +226,20 @@ class ModelTrainer:
             
             print(f"\nBest model: {self.best_model_name} (F1: {best_f1:.4f})")
     
-    def train(self, X: pd.DataFrame, y: pd.Series) -> Dict:
+    def train(self, X: pd.DataFrame, y: pd.Series, use_smote: bool = False) -> Dict:
         """
         Pipeline training lengkap:
         1. Split data 3-way (70/15/15)
-        2. Hyperparameter Tuning (GridSearchCV pada data training)
-        3. Cross Validation (pada data training dengan model optimal)
-        4. Train final models pada data training
-        5. Select best model
+        2. (Opsional) SMOTE oversampling pada data training
+        3. Hyperparameter Tuning (GridSearchCV pada data training)
+        4. Cross Validation (pada data training dengan model optimal)
+        5. Train final models pada data training
+        6. Select best model
+        
+        Args:
+            X: Feature DataFrame
+            y: Target Series
+            use_smote: Jika True, terapkan SMOTE pada data training
         
         Returns:
             Dictionary berisi hasil training
@@ -241,9 +247,32 @@ class ModelTrainer:
         # 3-way split: 70% train, 15% val, 15% test
         X_train, X_val, X_test, y_train, y_val, y_test = self.split_data_3way(X, y)
         
+        # Class distribution reporting
+        class_dist_original = y.value_counts().to_dict()
+        class_dist_train = y_train.value_counts().to_dict()
+        print(f"\n=== Class Distribution ===")
+        print(f"Original dataset: {class_dist_original} (total: {len(y)})")
+        print(f"Training set: {class_dist_train} (total: {len(y_train)})")
+        
         print(f"Training set size: {len(X_train)}")
         print(f"Validation set size: {len(X_val)}")
         print(f"Test set size: {len(X_test)}")
+        
+        # Opsional: SMOTE oversampling pada training data
+        smote_applied = False
+        if use_smote:
+            try:
+                from imblearn.over_sampling import SMOTE
+                smote = SMOTE(random_state=self.random_state)
+                X_train, y_train = smote.fit_resample(X_train, y_train)
+                smote_applied = True
+                class_dist_after_smote = pd.Series(y_train).value_counts().to_dict()
+                print(f"\n=== SMOTE Applied ===")
+                print(f"Training set after SMOTE: {class_dist_after_smote} (total: {len(y_train)})")
+            except ImportError:
+                print("Warning: imbalanced-learn not installed. Skipping SMOTE.")
+            except Exception as e:
+                print(f"Warning: SMOTE failed: {e}. Continuing without SMOTE.")
         
         # Hyperparameter tuning (GridSearchCV on training data)
         print("\n=== Hyperparameter Tuning ===")
@@ -267,6 +296,11 @@ class ModelTrainer:
             'cv_results': cv_results,
             'best_model_name': self.best_model_name,
             'best_params': best_params,
+            'class_distribution': {
+                'original': {str(k): int(v) for k, v in class_dist_original.items()},
+                'train': {str(k): int(v) for k, v in class_dist_train.items()},
+            },
+            'smote_applied': smote_applied,
         }
     
     def predict(self, X: pd.DataFrame, model_name: str = None) -> np.ndarray:

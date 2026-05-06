@@ -158,54 +158,51 @@ class PredictionController extends Controller
             $response = Http::get("{$this->mlServiceUrl}/statistics");
             $statistics = $response->successful() ? $response->json() : null;
 
+            // Fetch curves data (ROC, PR, Calibration)
+            $curvesData = null;
+            try {
+                $curvesResponse = Http::get("{$this->mlServiceUrl}/curves");
+                $curvesData = $curvesResponse->successful() ? $curvesResponse->json() : null;
+            } catch (\Exception $e) {
+                $curvesData = null;
+            }
+
+            // Fetch interpretability data (OR, feature importance)
+            $interpretabilityData = null;
+            try {
+                $interpResponse = Http::get("{$this->mlServiceUrl}/interpretability");
+                $interpretabilityData = $interpResponse->successful() ? $interpResponse->json() : null;
+            } catch (\Exception $e) {
+                $interpretabilityData = null;
+            }
+
             // Filter out models that are disabled by the Admin
             if ($statistics && isset($statistics['evaluation_results'])) {
                 $activeModels = \App\Models\ActiveModel::where('is_active', true)->pluck('model_name')->toArray();
 
-                // Filter evaluation results
-                $filteredResults = [];
-                foreach ($statistics['evaluation_results'] as $modelName => $result) {
-                    if (in_array($modelName, $activeModels)) {
-                        $filteredResults[$modelName] = $result;
-                    }
-                }
-                $statistics['evaluation_results'] = $filteredResults;
-
-                // Filter CV results as well
-                if (isset($statistics['cv_results'])) {
-                    $filteredCv = [];
-                    foreach ($statistics['cv_results'] as $modelName => $cv) {
+                // Helper to filter keyed arrays by active models
+                $filterByActive = function ($data) use ($activeModels) {
+                    if (!$data || !is_array($data)) return $data;
+                    $filtered = [];
+                    foreach ($data as $modelName => $value) {
                         if (in_array($modelName, $activeModels)) {
-                            $filteredCv[$modelName] = $cv;
+                            $filtered[$modelName] = $value;
                         }
                     }
-                    $statistics['cv_results'] = $filteredCv;
-                }
+                    return $filtered;
+                };
 
-                // Filter comparison_table as well
-                if (isset($statistics['comparison_table'])) {
-                    $filteredComparison = [];
-                    foreach ($statistics['comparison_table'] as $modelName => $data) {
-                        if (in_array($modelName, $activeModels)) {
-                            $filteredComparison[$modelName] = $data;
-                        }
-                    }
-                    $statistics['comparison_table'] = $filteredComparison;
-                }
+                $statistics['evaluation_results'] = $filterByActive($statistics['evaluation_results']);
+                $statistics['cv_results'] = $filterByActive($statistics['cv_results'] ?? null);
+                $statistics['comparison_table'] = $filterByActive($statistics['comparison_table'] ?? null);
+                $statistics['best_params'] = $filterByActive($statistics['best_params'] ?? null);
+                $statistics['bootstrap_ci'] = $filterByActive($statistics['bootstrap_ci'] ?? null);
 
-                // Filter best_params as well
-                if (isset($statistics['best_params'])) {
-                    $filteredParams = [];
-                    foreach ($statistics['best_params'] as $modelName => $params) {
-                        if (in_array($modelName, $activeModels)) {
-                            $filteredParams[$modelName] = $params;
-                        }
-                    }
-                    $statistics['best_params'] = $filteredParams;
-                }
+                // Filter curves & interpretability data
+                $curvesData = $filterByActive($curvesData);
+                $interpretabilityData = $filterByActive($interpretabilityData);
 
-                // Note: The /statistics endpoint from the Python service also returns a 'best_model' property.
-                // We should technically recalculate what the actual best active model is, based on the remaining CV results.
+                // Recalculate best active model
                 $bestScore = -1;
                 $activeBestModel = null;
                 if (!empty($statistics['cv_results'])) {
@@ -222,11 +219,30 @@ class PredictionController extends Controller
         }
         catch (\Exception $e) {
             $statistics = null;
+            $curvesData = null;
+            $interpretabilityData = null;
         }
 
         return Inertia::render('Prediction/Statistics', [
             'statistics' => $statistics,
+            'curves' => $curvesData,
+            'interpretability' => $interpretabilityData,
             'error' => $statistics === null || empty($statistics['evaluation_results']) ? 'Tidak dapat mengambil statistik atau belum ada model aktif dari ML Service' : null,
+        ]);
+    }
+
+    /**
+     * Tampilkan halaman komparasi SMOTE vs Non-SMOTE
+     * Halaman ini hanya menampilkan UI; data komparasi diambil via AJAX
+     * ke endpoint POST /api/compare-smote saat user klik tombol "Jalankan Komparasi".
+     */
+    public function compareSmote()
+    {
+        $totalRecords = \App\Models\TrainingData::count();
+
+        return Inertia::render('Prediction/CompareSmote', [
+            'totalRecords' => $totalRecords,
+            'mlServiceUrl' => env('ML_SERVICE_URL', 'http://localhost:5000'),
         ]);
     }
 
