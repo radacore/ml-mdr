@@ -3,7 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 interface RetrainResult {
     status?: string;
     best_model?: string;
-    cv_results?: Record<string, any>;
+    cv_results?: Record<
+        string,
+        { accuracy?: { mean?: number }; f1?: { mean?: number } }
+    >;
     data_count?: number;
     error?: string;
     message?: string;
@@ -31,6 +34,10 @@ export default function TerminalRetrainModal({ open, onClose, totalData, useSMOT
     const abortRef = useRef(false);
     const apiResultRef = useRef<RetrainResult | null>(null);
     const apiDoneRef = useRef(false);
+    const testingSize = Math.ceil(totalData * 0.15);
+    const remainingAfterTest = totalData - testingSize;
+    const validationSize = Math.ceil(remainingAfterTest * (0.15 / 0.85));
+    const trainingSize = totalData - testingSize - validationSize;
 
     const addLine = (text: string, color: string = 'text-gray-300') => {
         setLines(prev => [...prev, { text, color }]);
@@ -110,7 +117,9 @@ export default function TerminalRetrainModal({ open, onClose, totalData, useSMOT
 
             // Step 5
             { text: '[STEP 5/9] Membagi Data (70/15/15)...', color: 'text-yellow-400', delay: 2000 },
-            { text: `[INFO] Training: ${Math.round(totalData * 0.7)} data | Validation: ${Math.round(totalData * 0.15)} data | Testing: ${Math.round(totalData * 0.15)} data`, color: 'text-gray-400', delay: 1500 },
+            { text: `[INFO] Training: ${trainingSize} data | Validation: ${validationSize} data | Testing: ${testingSize} data`, color: 'text-gray-400', delay: 1500 },
+            { text: '[INFO] Stratified split, random_state=42 (deterministik, fair antar skenario)', color: 'text-gray-400', delay: 1200 },
+            { text: '[INFO] Val/Test set tidak akan disentuh SMOTE — distribusi asli', color: 'text-gray-400', delay: 1200 },
             { text: '[✓] Data berhasil dibagi (Stratified)', color: 'text-green-400', delay: 800 },
             { text: '', color: '', delay: 300 },
 
@@ -118,6 +127,7 @@ export default function TerminalRetrainModal({ open, onClose, totalData, useSMOT
             ...(useSMOTE ? [
                 { text: '[STEP 5.5] SMOTE Oversampling...', color: 'text-purple-400', delay: 1500 },
                 { text: '[INFO] Kelas minoritas terdeteksi, membuat data sintetis...', color: 'text-gray-400', delay: 2000 },
+                { text: '[INFO] SMOTE hanya pada training set (Chawla 2002; Lemaitre 2017)', color: 'text-gray-400', delay: 1200 },
                 { text: `[✓] SMOTE selesai: kelas diseimbangkan`, color: 'text-green-400', delay: 800 },
                 { text: '', color: '', delay: 300 },
             ] : [
@@ -196,7 +206,7 @@ export default function TerminalRetrainModal({ open, onClose, totalData, useSMOT
         // Show real evaluation results
         setProgress(88);
         if (result?.cv_results) {
-            for (const [name, cv] of Object.entries(result.cv_results as Record<string, any>)) {
+            for (const [name, cv] of Object.entries(result.cv_results)) {
                 await sleep(800);
                 const f1 = ((cv.f1?.mean || 0) * 100).toFixed(2);
                 const acc = ((cv.accuracy?.mean || 0) * 100).toFixed(2);
@@ -230,7 +240,7 @@ export default function TerminalRetrainModal({ open, onClose, totalData, useSMOT
             addLine(`  Model Terbaik: ${result.best_model}`, 'text-cyan-400');
         }
         if (result?.cv_results && result.best_model) {
-            const bestCv = (result.cv_results as any)[result.best_model];
+            const bestCv = result.cv_results[result.best_model];
             if (bestCv?.f1?.mean) {
                 addLine(`  Best CV F1-Score: ${(bestCv.f1.mean * 100).toFixed(2)}%`, 'text-cyan-400');
             }

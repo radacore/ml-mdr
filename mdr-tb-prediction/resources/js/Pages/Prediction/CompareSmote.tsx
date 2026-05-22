@@ -89,14 +89,31 @@ interface ConfusionMatrix {
 }
 
 interface BestParamsEntry {
-    params: Record<string, any>;
+    params: Record<string, unknown>;
     best_cv_score: number;
 }
 
 interface ClassDistShape {
     original?: Record<string, number>;
     train?: Record<string, number>;
-    [key: string]: any;
+    train_before_smote?: Record<string, number>;
+    train_after_smote?: Record<string, number> | null;
+    [key: string]: unknown;
+}
+
+interface SplitInfo {
+    total_cleaned?: number;
+    train_size?: number;
+    validation_size?: number;
+    test_size?: number;
+    ratio?: string;
+}
+
+interface SmoteInfo {
+    applied?: boolean;
+    train_size_before?: number;
+    train_size_after?: number;
+    class_distribution_after?: Record<string, number> | null;
 }
 
 interface ScenarioResult {
@@ -107,14 +124,18 @@ interface ScenarioResult {
     confusion_matrix: Record<string, ConfusionMatrix>;
     smote_applied: boolean;
     class_distribution: ClassDistShape;
+    split_info?: SplitInfo;
+    smote_info?: SmoteInfo;
     train_size: number;
     val_size: number;
     test_size: number;
+    smote_train_size?: number;
 }
 
 interface CompareResponse {
     status: string;
     data_count: number;
+    cleaned_data_count?: number;
     models: string[];
     no_smote: ScenarioResult;
     with_smote: ScenarioResult;
@@ -167,10 +188,15 @@ export default function CompareSmote({ totalRecords, mlServiceUrl }: Props) {
             }
             setResult(data);
             toast.success("Komparasi selesai");
-        } catch (err: any) {
+        } catch (err) {
+            const axiosError = err as {
+                response?: { data?: { message?: string; error?: string } };
+                message?: string;
+            };
             const msg =
-                err?.response?.data?.message ||
-                err?.message ||
+                axiosError.response?.data?.message ||
+                axiosError.response?.data?.error ||
+                axiosError.message ||
                 "Terjadi kesalahan";
             setErrorMsg(msg);
             toast.error("Komparasi gagal: " + msg);
@@ -275,11 +301,12 @@ function WinnerCard({ winner }: { winner: CompareResponse["winner"] }) {
 
 function extractClassDist(
     d: ClassDistShape | undefined,
-    prefer: "original" | "train",
+    prefer: keyof ClassDistShape,
 ): Record<string, number> {
     if (!d) return {};
-    if (d[prefer] && typeof d[prefer] === "object")
-        return d[prefer] as Record<string, number>;
+    const preferredValue = d[prefer];
+    if (preferredValue && typeof preferredValue === "object")
+        return preferredValue as Record<string, number>;
     if (d.original && typeof d.original === "object") return d.original;
     if (d.train && typeof d.train === "object") return d.train;
     // fallback: assume top-level is the dist
@@ -298,11 +325,20 @@ function ClassDistributionCard({
     withSmote: ScenarioResult;
 }) {
     const original = extractClassDist(noSmote.class_distribution, "original");
-    const trainNoSmote = extractClassDist(noSmote.class_distribution, "train");
-    const trainWithSmote = extractClassDist(
-        withSmote.class_distribution,
-        "train",
+    const trainNoSmote = extractClassDist(
+        noSmote.class_distribution,
+        "train_before_smote",
     );
+    const trainWithSmote =
+        withSmote.smote_info?.class_distribution_after ??
+        extractClassDist(withSmote.class_distribution, "train_after_smote");
+    const splitInfo = noSmote.split_info ?? withSmote.split_info;
+    const splitRatio = splitInfo?.ratio ?? "70/15/15";
+    const cleanTotal = splitInfo?.total_cleaned;
+    const smoteTrainSize =
+        withSmote.smote_train_size ??
+        withSmote.smote_info?.train_size_after ??
+        withSmote.train_size;
 
     const baseOriginal = Object.keys(original).length ? original : trainNoSmote;
 
@@ -320,15 +356,16 @@ function ClassDistributionCard({
             <CardHeader>
                 <CardTitle>Distribusi Kelas</CardTitle>
                 <CardDescription>
-                    Perbandingan distribusi label sebelum dan sesudah SMOTE
-                    diterapkan pada training set.
+                    Split tetap {splitRatio}. SMOTE hanya diterapkan pada
+                    training set setelah data dibagi, bukan pada validation atau
+                    testing.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="grid gap-6 md:grid-cols-2">
                     <div>
                         <h4 className="mb-2 text-sm font-semibold">
-                            Tanpa SMOTE (asli)
+                            Data bersih sebelum split
                         </h4>
                         {origData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={220}>
@@ -352,7 +389,7 @@ function ClassDistributionCard({
                     </div>
                     <div>
                         <h4 className="mb-2 text-sm font-semibold">
-                            Dengan SMOTE (training)
+                            Training setelah SMOTE
                         </h4>
                         {smoteData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={220}>
@@ -376,25 +413,122 @@ function ClassDistributionCard({
                     </div>
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-3 text-sm">
-                    <div className="rounded-md border p-3">
-                        <div className="text-muted-foreground">Train size</div>
-                        <div className="font-semibold">
-                            {noSmote.train_size} → {withSmote.train_size}
-                        </div>
-                    </div>
-                    <div className="rounded-md border p-3">
-                        <div className="text-muted-foreground">
-                            Validation size
-                        </div>
-                        <div className="font-semibold">{noSmote.val_size}</div>
-                    </div>
-                    <div className="rounded-md border p-3">
-                        <div className="text-muted-foreground">Test size</div>
-                        <div className="font-semibold">{noSmote.test_size}</div>
-                    </div>
+                    <SizeBreakdownCard
+                        title={`Training asli (${splitRatio})`}
+                        total={noSmote.train_size}
+                        dist={trainNoSmote}
+                        accent="text-blue-600 dark:text-blue-400"
+                        footer={
+                            cleanTotal
+                                ? `${pctOf(noSmote.train_size, cleanTotal)} dari total ${cleanTotal} data bersih`
+                                : "Subset training sebelum SMOTE"
+                        }
+                    />
+                    <SizeBreakdownCard
+                        title="Validation / Testing"
+                        total={noSmote.val_size + noSmote.test_size}
+                        secondary={`${noSmote.val_size} validation + ${noSmote.test_size} testing`}
+                        accent="text-emerald-600 dark:text-emerald-400"
+                        footer="Tidak disentuh SMOTE — dipakai mengukur performa nyata."
+                    />
+                    <SizeBreakdownCard
+                        title="Training setelah SMOTE"
+                        total={smoteTrainSize}
+                        dist={trainWithSmote}
+                        accent="text-violet-600 dark:text-violet-400"
+                        delta={smoteTrainSize - noSmote.train_size}
+                        footer={
+                            cleanTotal
+                                ? `Total data bersih sebelum split: ${cleanTotal}`
+                                : "Hanya training yang di-SMOTE"
+                        }
+                    />
                 </div>
             </CardContent>
         </Card>
+    );
+}
+
+function pctOf(part: number, total: number): string {
+    if (!total) return "0%";
+    return `${((part / total) * 100).toFixed(1)}%`;
+}
+
+function SizeBreakdownCard({
+    title,
+    total,
+    dist,
+    secondary,
+    accent,
+    footer,
+    delta,
+}: {
+    title: string;
+    total: number;
+    dist?: Record<string, number>;
+    secondary?: string;
+    accent: string;
+    footer?: string;
+    delta?: number;
+}) {
+    const labelMap: Record<string, string> = {
+        "0": "Berhasil",
+        "1": "Tidak Berhasil",
+    };
+    const entries = dist ? Object.entries(dist) : [];
+
+    return (
+        <div className="rounded-md border p-3 space-y-2">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                {title}
+            </div>
+            <div className="flex items-baseline gap-2">
+                <div className={`text-2xl font-bold ${accent}`}>{total}</div>
+                <div className="text-xs text-muted-foreground">data</div>
+                {typeof delta === "number" && delta !== 0 && (
+                    <Badge variant="secondary" className="ml-auto gap-1">
+                        {delta > 0 ? `+${delta}` : delta} vs sebelum
+                    </Badge>
+                )}
+            </div>
+            {secondary && (
+                <div className="text-xs text-muted-foreground">
+                    {secondary}
+                </div>
+            )}
+            {entries.length > 0 && (
+                <div className="space-y-1 pt-1">
+                    {entries.map(([k, v]) => {
+                        const num = Number(v);
+                        return (
+                            <div
+                                key={k}
+                                className="flex items-center justify-between text-xs"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className={`inline-block h-2 w-2 rounded-full ${
+                                            k === "0"
+                                                ? "bg-emerald-500"
+                                                : "bg-rose-500"
+                                        }`}
+                                    />
+                                    <span>{labelMap[k] ?? k}</span>
+                                </span>
+                                <span className="tabular-nums">
+                                    {num} ({pctOf(num, total)})
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+            {footer && (
+                <div className="pt-1 text-xs text-muted-foreground">
+                    {footer}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -706,12 +840,15 @@ function F1BarChartCard({ result }: { result: CompareResponse }) {
                         <XAxis dataKey="model" />
                         <YAxis domain={[0, 100]} unit="%" />
                         <Tooltip
-                            formatter={(value: any, name: any, props: any) => {
+                            formatter={(value, name, props) => {
                                 const k =
                                     name === "Tanpa SMOTE"
                                         ? "stdNo"
                                         : "stdWith";
-                                const std = props?.payload?.[k];
+                                const payload = props.payload as
+                                    | Record<string, string | number>
+                                    | undefined;
+                                const std = payload?.[k];
                                 return [`${value}% (±${std}%)`, name];
                             }}
                         />
@@ -756,6 +893,30 @@ function InsightCard() {
                     sudah seimbang atau cukup besar, SMOTE bisa jadi tidak
                     meningkatkan (bahkan menurunkan) performa.
                 </p>
+                <div className="mt-3 rounded-md border border-blue-200 bg-white/60 p-3">
+                    <p className="text-foreground font-medium">
+                        Fairness perbandingan
+                    </p>
+                    <p className="mt-1">
+                        Kedua skenario di halaman ini dilatih dengan konfigurasi
+                        split <strong>identik</strong>: rasio 70/15/15,{" "}
+                        <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                            random_state=42
+                        </code>
+                        , dan test/validation set yang berisi pasien yang sama —
+                        tidak pernah disentuh SMOTE. Hyperparameter tuning
+                        (GridSearchCV) berjalan dari training awal yang sama
+                        ukurannya. Dengan kontrol ini, selisih F1 di tabel di
+                        atas dapat diatribusikan langsung ke efek SMOTE, bukan
+                        ke perbedaan partisi data.
+                    </p>
+                    <p className="mt-2 text-xs">
+                        Referensi: Chawla et al. (2002), <em>SMOTE: Synthetic
+                        Minority Over-sampling Technique</em>, JAIR; Lemaitre et
+                        al. (2017), <em>Imbalanced-learn: A Python Toolbox</em>,
+                        JMLR.
+                    </p>
+                </div>
             </CardContent>
         </Card>
     );
@@ -788,6 +949,15 @@ function HeroCard({
                                 dan dengan SMOTE, lalu membandingkan performanya
                                 secara berdampingan.
                             </CardDescription>
+                            <p className="mt-2 max-w-2xl text-xs text-muted-foreground">
+                                Catatan: jumlah <strong>{totalRecords.toLocaleString("id-ID")} records</strong>{" "}
+                                di atas adalah data mentah dari database. Sebelum
+                                training, ML service membersihkan data (drop missing
+                                value dan outlier IQR), sehingga &quot;Total data
+                                bersih&quot; pada kartu di bawah bisa lebih kecil.
+                                Split 70/15/15 dan SMOTE bekerja di atas data bersih
+                                tersebut, bukan di atas data mentah.
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
