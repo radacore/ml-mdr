@@ -402,7 +402,7 @@ def predict():
     """Prediksi untuk single input"""
     global preprocessor, trainer
 
-    if not is_trained:
+    if not is_trained or preprocessor is None or trainer is None:
         return jsonify({"error": "Models not trained yet"}), 400
 
     try:
@@ -586,6 +586,8 @@ def compare_smote():
             ev = ModelEvaluator()
             res = tr.train(X, y, use_smote=use_smote_flag)
             eval_res = ev.evaluate_all_models(tr.models, res["X_test"], res["y_test"])
+            split_info = res.get("split_info", {})
+            smote_info = res.get("smote_info", {})
             return {
                 "best_model": res["best_model_name"],
                 "cv_results": tr.cv_results,
@@ -596,9 +598,12 @@ def compare_smote():
                 },
                 "smote_applied": res.get("smote_applied", False),
                 "class_distribution": res.get("class_distribution", {}),
-                "train_size": int(len(res["X_train"])),
-                "val_size": int(len(res["X_val"])),
-                "test_size": int(len(res["X_test"])),
+                "split_info": split_info,
+                "smote_info": smote_info,
+                "train_size": int(split_info.get("train_size", len(res["X_train"]))),
+                "val_size": int(split_info.get("validation_size", len(res["X_val"]))),
+                "test_size": int(split_info.get("test_size", len(res["X_test"]))),
+                "smote_train_size": int(smote_info.get("train_size_after", len(res["X_train"]))),
             }
 
         print("=== /compare-smote: running TANPA SMOTE ===")
@@ -626,6 +631,7 @@ def compare_smote():
             {
                 "status": "success",
                 "data_count": int(len(df)),
+                "cleaned_data_count": int(len(y)),
                 "models": list(no_smote["cv_results"].keys()),
                 "no_smote": no_smote,
                 "with_smote": with_smote,

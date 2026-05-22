@@ -17,7 +17,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional, cast
 import joblib
 import os
 
@@ -29,9 +29,9 @@ class ModelTrainer:
         self.n_folds = n_folds
         self.random_state = random_state
         self.models: Dict[str, Pipeline] = {}
-        self.best_model_name: str = None
-        self.best_model: Pipeline = None
-        self.cv_results: Dict[str, Dict[str, float]] = {}
+        self.best_model_name: Optional[str] = None
+        self.best_model: Optional[Pipeline] = None
+        self.cv_results: Dict[str, Dict[str, Dict[str, Any]]] = {}
         self.best_params: Dict[str, Dict] = {}
         self.scaler = StandardScaler()
         
@@ -247,9 +247,16 @@ class ModelTrainer:
         # 3-way split: 70% train, 15% val, 15% test
         X_train, X_val, X_test, y_train, y_val, y_test = self.split_data_3way(X, y)
         
-        # Class distribution reporting
+        # Class distribution reporting before optional SMOTE.
         class_dist_original = y.value_counts().to_dict()
         class_dist_train = y_train.value_counts().to_dict()
+        split_info = {
+            'total_cleaned': int(len(y)),
+            'train_size': int(len(X_train)),
+            'validation_size': int(len(X_val)),
+            'test_size': int(len(X_test)),
+            'ratio': '70/15/15',
+        }
         print(f"\n=== Class Distribution ===")
         print(f"Original dataset: {class_dist_original} (total: {len(y)})")
         print(f"Training set: {class_dist_train} (total: {len(y_train)})")
@@ -260,11 +267,15 @@ class ModelTrainer:
         
         # Opsional: SMOTE oversampling pada training data
         smote_applied = False
+        class_dist_after_smote = None
+        train_size_before_smote = int(len(X_train))
         if use_smote:
             try:
                 from imblearn.over_sampling import SMOTE
                 smote = SMOTE(random_state=self.random_state)
-                X_train, y_train = smote.fit_resample(X_train, y_train)
+                resampled = smote.fit_resample(X_train, y_train)
+                X_train = cast(pd.DataFrame, resampled[0])
+                y_train = cast(pd.Series, resampled[1])
                 smote_applied = True
                 class_dist_after_smote = pd.Series(y_train).value_counts().to_dict()
                 print(f"\n=== SMOTE Applied ===")
@@ -299,11 +310,20 @@ class ModelTrainer:
             'class_distribution': {
                 'original': {str(k): int(v) for k, v in class_dist_original.items()},
                 'train': {str(k): int(v) for k, v in class_dist_train.items()},
+                'train_before_smote': {str(k): int(v) for k, v in class_dist_train.items()},
+                'train_after_smote': {str(k): int(v) for k, v in class_dist_after_smote.items()} if class_dist_after_smote is not None else None,
+            },
+            'split_info': split_info,
+            'smote_info': {
+                'applied': smote_applied,
+                'train_size_before': train_size_before_smote,
+                'train_size_after': int(len(X_train)),
+                'class_distribution_after': {str(k): int(v) for k, v in class_dist_after_smote.items()} if class_dist_after_smote is not None else None,
             },
             'smote_applied': smote_applied,
         }
     
-    def predict(self, X: pd.DataFrame, model_name: str = None) -> np.ndarray:
+    def predict(self, X: pd.DataFrame, model_name: Optional[str] = None) -> np.ndarray:
         """
         Melakukan prediksi menggunakan model tertentu atau model terbaik
         """
@@ -311,10 +331,12 @@ class ModelTrainer:
             model = self.models[model_name]
         else:
             model = self.best_model
+        if model is None:
+            raise RuntimeError("Model has not been trained or loaded")
         
         return model.predict(X)
     
-    def predict_proba(self, X: pd.DataFrame, model_name: str = None) -> np.ndarray:
+    def predict_proba(self, X: pd.DataFrame, model_name: Optional[str] = None) -> np.ndarray:
         """
         Mendapatkan probabilitas prediksi
         """
@@ -322,6 +344,8 @@ class ModelTrainer:
             model = self.models[model_name]
         else:
             model = self.best_model
+        if model is None:
+            raise RuntimeError("Model has not been trained or loaded")
         
         return model.predict_proba(X)
     
@@ -364,7 +388,9 @@ class ModelTrainer:
             self.cv_results = best_info.get('cv_results', {})
             self.best_params = best_info.get('best_params', {})
             if self.best_model_name:
-                self.best_model = self.models.get(self.best_model_name)
+                loaded_best_model = self.models.get(self.best_model_name)
+                if loaded_best_model is not None:
+                    self.best_model = loaded_best_model
 
 
 if __name__ == "__main__":
