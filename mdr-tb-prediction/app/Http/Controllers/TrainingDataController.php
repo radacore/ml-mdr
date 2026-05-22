@@ -33,6 +33,10 @@ class TrainingDataController extends Controller
         $trainingData = $query->orderBy('created_at', 'desc')->paginate(15);
 
         $total = TrainingData::count();
+        $testingCount = (int) ceil($total * 0.15);
+        $remainingAfterTest = $total - $testingCount;
+        $validationCount = (int) ceil($remainingAfterTest * (0.15 / 0.85));
+        $trainingCount = $total - $testingCount - $validationCount;
 
         return Inertia::render('TrainingData/Index', [
             'trainingData' => $trainingData,
@@ -41,11 +45,175 @@ class TrainingDataController extends Controller
                 'total' => $total,
                 'berhasil' => TrainingData::where('keberhasilan_pengobatan', 'Berhasil')->count(),
                 'tidak_berhasil' => TrainingData::where('keberhasilan_pengobatan', 'Tidak Berhasil')->count(),
-                'data_training' => (int)round($total * 0.70),
-                'data_validation' => (int)round($total * 0.15),
-                'data_testing' => (int)round($total * 0.15),
+                'data_training' => $trainingCount,
+                'data_validation' => $validationCount,
+                'data_testing' => $testingCount,
             ],
         ]);
+    }
+
+    /**
+     * Tampilkan halaman pembersihan data: 24 baris yang dibuang preprocessing
+     * (replikasi `DataPreprocessor.remove_outliers` ML service: IQR Tukey
+     * pada kolom numeric ket_usia, bb, tb, imt, dijalankan sekuensial).
+     */
+    public function cleaning()
+    {
+        $all = TrainingData::orderBy('id')->get();
+        $total = $all->count();
+
+        $numericalCols = ['ket_usia', 'bb', 'tb', 'imt'];
+        $colLabels = [
+            'ket_usia' => 'Ket. Usia (tahun)',
+            'bb'       => 'BB (kg)',
+            'tb'       => 'TB (cm)',
+            'imt'      => 'IMT',
+        ];
+
+        // Drop missing values: mirror dropna() pada kolom yang dipakai model.
+        // Field nullable yang tidak ikut training (keterangan_efek_samping) tidak diperhitungkan.
+        $requiredCols = [
+            'usia', 'ket_usia', 'jenis_kelamin', 'status_bekerja', 'bb', 'tb', 'imt',
+            'status_gizi', 'status_merokok', 'pemeriksaan_kontak', 'riwayat_dm',
+            'riwayat_hiv', 'komorbiditas', 'kepatuhan_minum_obat', 'efek_samping_obat',
+            'riwayat_pengobatan', 'panduan_pengobatan', 'keberhasilan_pengobatan',
+        ];
+
+        $kept = collect();
+        $dropped = []; // each: ['row' => model, 'reason' => string, 'detail' => array]
+
+        foreach ($all as $row) {
+            $missing = [];
+            foreach ($requiredCols as $col) {
+                $v = $row->{$col};
+                if ($v === null || $v === '') {
+                    $missing[] = $col;
+                }
+            }
+            if (!empty($missing)) {
+                $dropped[] = [
+                    'row' => $row,
+                    'reason' => 'Missing value',
+                    'detail' => ['kolom' => $missing],
+                ];
+            } else {
+                $kept->push($row);
+            }
+        }
+
+        $dropMissingCount = count($dropped);
+
+        // Feature engineering: cast BB & TB ke int lalu recompute IMT = BB / (TB/100)^2,
+        // identik dengan DataPreprocessor.feature_engineering di ML service.
+        // Tanpa recompute, IQR pada kolom IMT raw akan ikut membuang baris extra
+        // sehingga total dibuang jadi 26 (bukan 24 seperti pipeline ML).
+        $kept = $kept->map(function ($row) {
+            $bb = (int) round((float) $row->bb);
+            $tb = (int) round((float) $row->tb);
+            $row->bb = $bb;
+            $row->tb = $tb;
+            $row->imt = $tb > 0 ? round($bb / pow($tb / 100, 2), 2) : (float) $row->imt;
+            return $row;
+        });
+
+        // IQR sequential, identik dengan preprocessing.remove_outliers
+        $stepStats = []; // per-kolom: q1, q3, iqr, lower, upper, dropped
+        foreach ($numericalCols as $col) {
+            $values = $kept->pluck($col)->map(fn($v) => (float) $v)->sort()->values()->all();
+            $n = count($values);
+            if ($n === 0) {
+                $stepStats[$col] = null;
+                continue;
+            }
+            $q1 = $this->quantile($values, 0.25);
+            $q3 = $this->quantile($values, 0.75);
+            $iqr = $q3 - $q1;
+            $lower = $q1 - 1.5 * $iqr;
+            $upper = $q3 + 1.5 * $iqr;
+
+            $beforeCount = $kept->count();
+            $newKept = collect();
+            foreach ($kept as $row) {
+                $val = (float) $row->{$col};
+                if ($val < $lower || $val > $upper) {
+                    $dropped[] = [
+                        'row' => $row,
+                        'reason' => 'Outlier IQR',
+                        'detail' => [
+                            'kolom' => $colLabels[$col],
+                            'nilai' => $val,
+                            'batas_bawah' => round($lower, 2),
+                            'batas_atas' => round($upper, 2),
+                        ],
+                    ];
+                } else {
+                    $newKept->push($row);
+                }
+            }
+            $kept = $newKept;
+            $stepStats[$col] = [
+                'kolom' => $colLabels[$col],
+                'q1' => round($q1, 2),
+                'q3' => round($q3, 2),
+                'iqr' => round($iqr, 2),
+                'lower' => round($lower, 2),
+                'upper' => round($upper, 2),
+                'dibuang' => $beforeCount - $kept->count(),
+                'sisa' => $kept->count(),
+            ];
+        }
+
+        // Format dropped rows untuk frontend
+        $droppedRows = collect($dropped)->map(function ($d) {
+            $r = $d['row'];
+            return [
+                'id' => $r->id,
+                'usia' => $r->usia,
+                'ket_usia' => (int) $r->ket_usia,
+                'jenis_kelamin' => $r->jenis_kelamin,
+                'bb' => (float) $r->bb,
+                'tb' => (float) $r->tb,
+                'imt' => (float) $r->imt,
+                'keberhasilan_pengobatan' => $r->keberhasilan_pengobatan,
+                'reason' => $d['reason'],
+                'detail' => $d['detail'],
+            ];
+        })->values();
+
+        return Inertia::render('TrainingData/Cleaning', [
+            'summary' => [
+                'total_raw' => $total,
+                'total_cleaned' => $kept->count(),
+                'total_dropped' => $total - $kept->count(),
+                'dropped_missing' => $dropMissingCount,
+                'dropped_outlier' => ($total - $kept->count()) - $dropMissingCount,
+                'percent_dropped' => $total > 0 ? round((($total - $kept->count()) / $total) * 100, 2) : 0,
+            ],
+            'iqr_steps' => $stepStats,
+            'dropped_rows' => $droppedRows,
+        ]);
+    }
+
+    /**
+     * Linear interpolation quantile (sama dengan default pandas.quantile).
+     */
+    protected function quantile(array $sortedValues, float $q): float
+    {
+        $n = count($sortedValues);
+        if ($n === 0) {
+            return 0.0;
+        }
+        if ($n === 1) {
+            return $sortedValues[0];
+        }
+        $pos = ($n - 1) * $q;
+        $lo = (int) floor($pos);
+        $hi = (int) ceil($pos);
+        if ($lo === $hi) {
+            return $sortedValues[$lo];
+        }
+        $frac = $pos - $lo;
+        return $sortedValues[$lo] + ($sortedValues[$hi] - $sortedValues[$lo]) * $frac;
     }
 
     /**

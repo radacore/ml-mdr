@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/ShadcnComponents/ui/badge';
 import { DeleteConfirmModal } from '@/ShadcnComponents/DeleteConfirmModal';
 import { useState } from 'react';
-import { Plus, Search, Trash2, Edit, RefreshCw, Database, CheckCircle2, AlertCircle, Brain, FlaskConical, Percent, SplitSquareVertical, Columns3, Cpu } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, RefreshCw, Database, CheckCircle2, AlertCircle, Brain, FlaskConical, Percent, SplitSquareVertical, Columns3, Cpu, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import TerminalRetrainModal from '@/ShadcnComponents/TerminalRetrainModal';
 
@@ -138,6 +138,14 @@ export default function Index({ trainingData, filters, stats }: Props) {
                             <Brain className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
+                            <p className="mb-3 text-xs text-muted-foreground">
+                                Pembagian dihitung dari total data mentah ({stats.total} baris) memakai
+                                rumus split yang sama dengan model (test 15%, validation 15%, training sisanya).
+                                Saat training berjalan, ML service melakukan pembersihan tambahan
+                                (drop missing value &amp; outlier IQR) sehingga jumlah baris yang
+                                benar-benar dipakai untuk melatih model bisa lebih kecil dari {stats.total}
+                                (lihat halaman Komparasi SMOTE).
+                            </p>
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between text-sm">
                                     <div className="flex items-center gap-2">
@@ -183,7 +191,13 @@ export default function Index({ trainingData, filters, stats }: Props) {
                                     Cari
                                 </Button>
                             </form>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                                <Link href={route('training-data.cleaning')}>
+                                    <Button variant="outline" className="border-amber-500 text-amber-700 hover:bg-amber-50">
+                                        <Filter className="h-4 w-4 mr-2" />
+                                        Pembersihan Data
+                                    </Button>
+                                </Link>
                                 <Button
                                     variant="outline"
                                     onClick={() => handleRetrain(false)}

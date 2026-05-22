@@ -49,6 +49,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/prediction/{prediction}', [PredictionController::class , 'show'])->name('prediction.show');
 
     // Training Data Routes
+    Route::get('/training-data/cleaning', [TrainingDataController::class, 'cleaning'])
+        ->name('training-data.cleaning');
     Route::resource('training-data', TrainingDataController::class)->parameters([
         'training-data' => 'trainingData'
     ]);
