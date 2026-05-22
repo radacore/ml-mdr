@@ -104,6 +104,10 @@ interface Statistics {
         original?: Record<string, number>;
         train?: Record<string, number>;
     } | null;
+    raw_class_distribution?: {
+        counts: Record<string, number>;
+        total: number;
+    } | null;
     bootstrap_ci?: Record<string, Record<string, BootstrapCI>> | null;
 }
 
@@ -539,49 +543,175 @@ export default function Statistics({ statistics, curves, interpretability, error
                     <Card>
                         <CardHeader>
                             <CardTitle>Distribusi Kelas Target</CardTitle>
-                            <CardDescription>Distribusi label Keberhasilan Pengobatan pada dataset</CardDescription>
+                            <CardDescription>
+                                Distribusi label Keberhasilan Pengobatan pada dataset.
+                                Ditampilkan dua versi: data mentah dari database dan
+                                data bersih yang dipakai melatih model.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {(() => {
-                                    const dist = statistics.class_distribution!;
-                                    const counts = dist.counts || dist.original || {};
-                                    const labelMap: Record<string, string> = { '0': 'Berhasil', '1': 'Tidak Berhasil' };
+                            {(() => {
+                                const labelMap: Record<string, string> = { '0': 'Berhasil', '1': 'Tidak Berhasil' };
+                                const pieColors = ['#10b981', '#ef4444'];
+
+                                const cleanCounts = statistics.class_distribution?.counts
+                                    || statistics.class_distribution?.original
+                                    || {};
+                                const rawCounts = statistics.raw_class_distribution?.counts || {};
+                                const rawTotal = statistics.raw_class_distribution?.total
+                                    ?? Object.values(rawCounts).reduce((a, b) => a + b, 0);
+                                const cleanTotal = Object.values(cleanCounts).reduce((a, b) => a + b, 0);
+
+                                const renderPie = (
+                                    title: string,
+                                    subtitle: string,
+                                    counts: Record<string, number>,
+                                    total: number,
+                                ) => {
                                     const pieData = Object.entries(counts).map(([k, v]) => ({
                                         name: labelMap[k] || k,
                                         value: v,
                                     }));
-                                    const pieColors = ['#10b981', '#ef4444'];
-                                    const total = Object.values(counts).reduce((a, b) => a + b, 0);
                                     return (
-                                        <>
-                                            <div className="flex items-center justify-center">
-                                                <ResponsiveContainer width="100%" height={220}>
-                                                    <PieChart>
-                                                        <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(1)}%`}>
-                                                            {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
-                                                        </Pie>
-                                                        <Tooltip />
-                                                    </PieChart>
-                                                </ResponsiveContainer>
+                                        <div className="rounded-lg border bg-card p-4">
+                                            <div className="mb-2">
+                                                <h4 className="text-sm font-semibold">{title}</h4>
+                                                <p className="text-xs text-muted-foreground">{subtitle}</p>
                                             </div>
-                                            <div className="flex flex-col justify-center space-y-2">
-                                                {pieData.map((d, i) => (
-                                                    <div key={i} className="flex items-center gap-3">
-                                                        <span className="w-4 h-4 rounded-full inline-block" style={{ backgroundColor: pieColors[i] }} />
-                                                        <span className="font-medium">{d.name}:</span>
-                                                        <span>{d.value} ({total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%)</span>
-                                                    </div>
-                                                ))}
-                                                <p className="text-sm text-muted-foreground mt-2">Total: {total} data</p>
-                                                {dist.imbalance_ratio && (
-                                                    <p className="text-sm text-muted-foreground">Imbalance Ratio: {dist.imbalance_ratio}:1</p>
-                                                )}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                                                <div className="flex items-center justify-center">
+                                                    {pieData.length > 0 ? (
+                                                        <ResponsiveContainer width="100%" height={220}>
+                                                            <PieChart>
+                                                                <Pie
+                                                                    data={pieData}
+                                                                    dataKey="value"
+                                                                    nameKey="name"
+                                                                    cx="50%"
+                                                                    cy="50%"
+                                                                    outerRadius={80}
+                                                                    labelLine={false}
+                                                                    label={({ percent }) => `${((percent ?? 0) * 100).toFixed(1)}%`}
+                                                                >
+                                                                    {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                                                                </Pie>
+                                                                <Tooltip formatter={(value, name) => {
+                                                                    const v = typeof value === 'number' ? value : 0;
+                                                                    const pct = total > 0 ? ((v / total) * 100).toFixed(1) : '0';
+                                                                    return [`${v} (${pct}%)`, name as string];
+                                                                }} />
+                                                            </PieChart>
+                                                        </ResponsiveContainer>
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground">Data tidak tersedia.</p>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col justify-center space-y-2">
+                                                    {pieData.map((d, i) => (
+                                                        <div key={i} className="flex items-center gap-3">
+                                                            <span className="w-4 h-4 rounded-full inline-block" style={{ backgroundColor: pieColors[i % pieColors.length] }} />
+                                                            <span className="font-medium">{d.name}:</span>
+                                                            <span>{d.value} ({total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%)</span>
+                                                        </div>
+                                                    ))}
+                                                    <p className="text-sm text-muted-foreground mt-2">Total: {total} data</p>
+                                                </div>
                                             </div>
-                                        </>
+                                        </div>
                                     );
-                                })()}
-                            </div>
+                                };
+
+                                const dropped = rawTotal && cleanTotal ? rawTotal - cleanTotal : 0;
+                                const droppedPct = rawTotal > 0 ? ((dropped / rawTotal) * 100).toFixed(1) : '0';
+
+                                return (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {rawTotal > 0 && renderPie(
+                                                'Data Mentah (dari database)',
+                                                'Sebelum pembersihan, seluruh baris di tabel training_data.',
+                                                rawCounts,
+                                                rawTotal,
+                                            )}
+                                            {renderPie(
+                                                'Data Bersih (dipakai melatih model)',
+                                                'Setelah drop missing value, feature engineering IMT, dan outlier IQR.',
+                                                cleanCounts,
+                                                cleanTotal,
+                                            )}
+                                        </div>
+
+                                        <Alert>
+                                            <AlertDescription>
+                                                <p className="mb-2">
+                                                    <span className="font-semibold">Mengapa angka kanan dan kiri berbeda?</span>{' '}
+                                                    Saat pelatihan model, ML service melakukan langkah-langkah pembersihan
+                                                    sebelum melakukan split 70/15/15 dan SMOTE:
+                                                </p>
+                                                <ol className="list-decimal pl-5 space-y-1 text-sm">
+                                                    <li>Drop baris yang memiliki <em>missing value</em> pada fitur atau target.</li>
+                                                    <li>Hitung IMT dari BB dan TB (<em>feature engineering</em>).</li>
+                                                    <li>Buang <em>outlier</em> dengan metode IQR pada fitur numerik (BB, TB, IMT, Usia).</li>
+                                                    <li>Lakukan <em>label encoding</em> untuk fitur kategorikal.</li>
+                                                </ol>
+                                                {rawTotal > 0 && cleanTotal > 0 && (
+                                                    <p className="mt-2 text-sm">
+                                                        Pada dataset saat ini, dari <strong>{rawTotal}</strong> baris mentah
+                                                        tersisa <strong>{cleanTotal}</strong> baris bersih
+                                                        ({dropped} baris dibuang, sekitar {droppedPct}%). Semua metrik
+                                                        model di halaman ini dihitung dari {cleanTotal} baris bersih tersebut.
+                                                    </p>
+                                                )}
+                                                {statistics.class_distribution?.imbalance_ratio && (
+                                                    <p className="mt-1 text-sm text-muted-foreground">
+                                                        Imbalance Ratio (data bersih): {statistics.class_distribution.imbalance_ratio}:1
+                                                    </p>
+                                                )}
+                                            </AlertDescription>
+                                        </Alert>
+
+                                        <Alert className="border-blue-200 bg-blue-50/40">
+                                            <AlertDescription>
+                                                <p className="mb-1 font-semibold text-foreground">
+                                                    Fairness perbandingan model
+                                                </p>
+                                                <p className="text-sm">
+                                                    Semua model (Logistic Regression,
+                                                    Decision Tree, SVM) di halaman ini
+                                                    dilatih dengan konfigurasi split
+                                                    <strong> identik</strong>: rasio
+                                                    70/15/15,{' '}
+                                                    <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                                                        random_state=42
+                                                    </code>
+                                                    , dan test/validation set yang berisi
+                                                    pasien yang sama untuk setiap model
+                                                    — tidak pernah disentuh SMOTE.
+                                                    Hyperparameter tuning (GridSearchCV)
+                                                    berjalan dari training awal yang
+                                                    sama ukurannya. Dengan kontrol ini,
+                                                    selisih metrik antar model dapat
+                                                    diatribusikan langsung ke perbedaan
+                                                    algoritma, bukan partisi data.
+                                                </p>
+                                                <p className="mt-2 text-xs text-muted-foreground">
+                                                    Referensi: Chawla et al. (2002),{' '}
+                                                    <em>
+                                                        SMOTE: Synthetic Minority
+                                                        Over-sampling Technique
+                                                    </em>
+                                                    , JAIR; Lemaitre et al. (2017),{' '}
+                                                    <em>
+                                                        Imbalanced-learn: A Python
+                                                        Toolbox
+                                                    </em>
+                                                    , JMLR.
+                                                </p>
+                                            </AlertDescription>
+                                        </Alert>
+                                    </div>
+                                );
+                            })()}
                         </CardContent>
                     </Card>
                 )}

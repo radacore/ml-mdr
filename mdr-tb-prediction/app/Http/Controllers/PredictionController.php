@@ -216,6 +216,21 @@ class PredictionController extends Controller
                 $statistics['best_model'] = $activeBestModel;
             }
 
+            // Tambah distribusi kelas data mentah (dari tabel training_data di MySQL)
+            // supaya halaman bisa membandingkan dengan distribusi data bersih dari ML service.
+            if ($statistics) {
+                $rawBerhasil = (int) \App\Models\TrainingData::where('keberhasilan_pengobatan', 'Berhasil')->count();
+                $rawTidak = (int) \App\Models\TrainingData::where('keberhasilan_pengobatan', 'Tidak Berhasil')->count();
+                $rawTotal = $rawBerhasil + $rawTidak;
+                $statistics['raw_class_distribution'] = [
+                    'counts' => [
+                        '0' => $rawBerhasil,
+                        '1' => $rawTidak,
+                    ],
+                    'total' => $rawTotal,
+                ];
+            }
+
         }
         catch (\Exception $e) {
             $statistics = null;
