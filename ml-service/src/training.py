@@ -77,7 +77,7 @@ class ModelTrainer:
                 'classifier__max_depth': [3, 5, 7, 10, None],
                 'classifier__min_samples_split': [2, 5, 10],
                 'classifier__min_samples_leaf': [1, 2, 4],
-                'classifier__criterion': ['gini', 'entropy'],
+                'classifier__criterion': ['gini'],
             },
             'Support Vector Machine': {
                 'classifier__C': [0.1, 1, 10, 100],
