@@ -2,71 +2,173 @@
 Model Interpretability Module untuk Prediksi Keberhasilan Pengobatan MDR-TB
 
 Modul ini menangani:
-- Odds Ratio dari Logistic Regression (dengan CI 95%)
-- Feature Importance dari Decision Tree
-- Permutation Importance untuk model apapun (SVM, dll)
+- Odds Ratio dari Logistic Regression via Firth penalized logistic (single source of truth).
+- SHAP values analitik: LR (phi=beta*(x-E[x])), DT (TreeExplainer-style approx), SVM (permutation fallback).
+- Feature Importance dari Decision Tree.
+- Permutation Importance untuk model apapun (SVM, dll).
 """
 
 import numpy as np
 import pandas as pd
 from sklearn.inspection import permutation_importance
 from scipy import stats
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 
-def get_lr_odds_ratios(lr_pipeline, feature_names: List[str]) -> List[Dict[str, Any]]:
+def _firth_lookup_for_lr(
+    feature_names: List[str],
+    feature_selection_result: Optional[Dict[str, Any]],
+) -> Dict[str, Dict[str, Any]]:
+    """Build {feature: firth result dict} from cached raw firth_results.
+    Reads the raw firth output (with coefficient/ci) instead of the summary feature rows."""
+    out: Dict[str, Dict[str, Any]] = {}
+    if not feature_selection_result:
+        return out
+    firth_results = feature_selection_result.get("firth_results") or []
+    for f in firth_results:
+        name = f.get("feature")
+        if name and f.get("p_value") is not None:
+            out[name] = {
+                "coefficient": f.get("coefficient"),
+                "odds_ratio": f.get("odds_ratio"),
+                "ci_lower": f.get("ci_lower"),
+                "ci_upper": f.get("ci_upper"),
+                "p_value": f.get("p_value"),
+                "significant": f.get("significant"),
+                "method": feature_selection_result.get("firth_method", "firth"),
+            }
+    return out
+
+
+def get_lr_odds_ratios(
+    lr_pipeline,
+    feature_names: List[str],
+    feature_selection_result: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
     """
-    Mengekstrak Adjusted Odds Ratio (AOR) dari model Logistic Regression.
-    Termasuk Confidence Interval 95% dan p-value.
+    Adjusted Odds Ratio (AOR) + 95% CI + p-value untuk Logistic Regression.
 
-    Args:
-        lr_pipeline: sklearn Pipeline yang berisi step 'classifier' (LogisticRegression)
-        feature_names: Daftar nama fitur
-
-    Returns:
-        List of dict: [{feature, coefficient, odds_ratio, ci_lower, ci_upper, p_value}]
+    Single source of truth: Firth penalized logistic (dari feature_selection_result).
+    Fallback: Wald approx (lama) dgn flag method='wald_fallback' jika firth tidak tersedia.
     """
+    firth_map = _firth_lookup_for_lr(feature_names, feature_selection_result)
+
     try:
         classifier = lr_pipeline.named_steps['classifier']
-        scaler = lr_pipeline.named_steps['scaler']
-
         coefs = classifier.coef_[0]
-        intercept = classifier.intercept_[0]
 
         results = []
         for i, (name, coef) in enumerate(zip(feature_names, coefs)):
-            odds_ratio = float(np.exp(coef))
+            fr = firth_map.get(name)
+            if fr and fr.get("p_value") is not None:
+                # Firth source of truth
+                results.append({
+                    'feature': name,
+                    'coefficient': float(fr.get('coefficient', coef)),
+                    'odds_ratio': float(fr['odds_ratio']),
+                    'ci_lower': float(fr['ci_lower']),
+                    'ci_upper': float(fr['ci_upper']),
+                    'p_value': float(fr['p_value']),
+                    'significant': bool(fr['significant']),
+                    'method': fr.get('method', 'firth'),
+                })
+            else:
+                # Fallback lama (model lama tanpa firth result) — tandai eksplisit
+                se = abs(coef) / (abs(coef / 0.5) + 1e-10) if abs(coef) > 1e-10 else 0.5
+                z = coef / se if se > 0 else 0.0
+                p_value = float(2 * (1 - stats.norm.cdf(abs(z))))
+                results.append({
+                    'feature': name,
+                    'coefficient': float(coef),
+                    'odds_ratio': float(np.exp(coef)),
+                    'ci_lower': float(np.exp(coef - 1.96 * se)),
+                    'ci_upper': float(np.exp(coef + 1.96 * se)),
+                    'p_value': p_value,
+                    'significant': p_value < 0.05,
+                    'method': 'wald_fallback',
+                })
 
-            # Approximate standard error from inverse Hessian
-            # For simplicity, use Wald approximation: SE ≈ |coef| / z
-            # A more rigorous method would use the Hessian matrix
-            # Here we use a simple approximation based on coefficient magnitude
-            se = abs(coef) / (abs(coef / 0.5) + 1e-10) if abs(coef) > 1e-10 else 0.5
-            # Wald z-statistic
-            z = coef / se if se > 0 else 0.0
-            p_value = float(2 * (1 - stats.norm.cdf(abs(z))))
-
-            # 95% CI for odds ratio
-            ci_lower = float(np.exp(coef - 1.96 * se))
-            ci_upper = float(np.exp(coef + 1.96 * se))
-
-            results.append({
-                'feature': name,
-                'coefficient': float(coef),
-                'odds_ratio': odds_ratio,
-                'ci_lower': ci_lower,
-                'ci_upper': ci_upper,
-                'p_value': p_value,
-                'significant': p_value < 0.05
-            })
-
-        # Sort by absolute coefficient descending
         results.sort(key=lambda x: abs(x['coefficient']), reverse=True)
         return results
 
     except Exception as e:
         print(f"Error extracting LR odds ratios: {e}")
         return []
+
+
+def get_shap_values(
+    model,
+    X: pd.DataFrame,
+    y: pd.Series,
+    feature_names: List[str],
+    n_repeats: int = 30,
+    random_state: int = 42,
+) -> Dict[str, Any]:
+    """
+    SHAP values analitik (white-box). Tidak butuh package shap (yang cap Python<3.11 via numba).
+
+    - Logistic Regression: identity SHAP — phi_i = beta_i * (x_i - E[x_i])
+      (LinearExplainer equivalent; sama dgn cell 4127822d notebook disertasi).
+    - Decision Tree: mean |SHAP| approx dgn tree.feature_importances_ scaled (proxy); method='tree_proxy'.
+    - SVM: permutation fallback (reuse get_permutation_importance_data); method='permutation_fallback'.
+
+    Returns: {method, features:[{name, shap_mean_abs}]}, plus values (LR only) untuk beeswarm.
+    """
+    try:
+        classifier = model.named_steps['classifier']
+        scaler = model.named_steps.get('scaler')
+
+        cls_name = type(classifier).__name__
+
+        if cls_name == "LogisticRegression":
+            coefs = np.asarray(classifier.coef_[0])
+            X_scaled = scaler.transform(X.values) if scaler else X.values
+            mean_x = X_scaled.mean(axis=0)
+            # phi_i = beta_i * (x_i - E[x_i])
+            shap_vals = (X_scaled - mean_x) * coefs  # shape (n, p)
+            mean_abs = np.mean(np.abs(shap_vals), axis=0)
+            features = [
+                {"feature": name, "shap_mean_abs": float(v)}
+                for name, v in zip(feature_names, mean_abs)
+            ]
+            features.sort(key=lambda r: r["shap_mean_abs"], reverse=True)
+            return {
+                "method": "linear",
+                "features": features,
+                "values": shap_vals.tolist(),
+            }
+
+        if cls_name == "DecisionTreeClassifier":
+            importances = np.asarray(classifier.feature_importances_)
+            features = [
+                {"feature": name, "shap_mean_abs": float(v)}
+                for name, v in zip(feature_names, importances)
+            ]
+            features.sort(key=lambda r: r["shap_mean_abs"], reverse=True)
+            return {
+                "method": "tree_proxy",
+                "features": features,
+                "values": None,
+            }
+
+        # SVC dan lainnya → permutation fallback
+        perm = get_permutation_importance_data(
+            model, X, y, feature_names, n_repeats=n_repeats, random_state=random_state
+        )
+        features = [
+            {"feature": r["feature"], "shap_mean_abs": float(r["importance_mean"])}
+            for r in perm
+        ]
+        features.sort(key=lambda r: r["shap_mean_abs"], reverse=True)
+        return {
+            "method": "permutation_fallback",
+            "features": features,
+            "values": None,
+        }
+
+    except Exception as e:
+        print(f"Error computing SHAP values: {e}")
+        return {"method": "error", "features": [], "detail": str(e)}
 
 
 def get_tree_feature_importance(dt_pipeline, feature_names: List[str]) -> List[Dict[str, Any]]:
@@ -143,15 +245,20 @@ def get_permutation_importance_data(model, X: pd.DataFrame, y: pd.Series,
 
 
 def get_all_interpretability(models: Dict, X: pd.DataFrame, y: pd.Series,
-                              feature_names: List[str]) -> Dict[str, Any]:
+                              feature_names: List[str],
+                              feature_selection_result: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Menghitung interpretability data untuk semua model.
 
+    Args:
+        feature_selection_result: hasil run_hybrid_selection (sumber firth OR/p-value).
+            Jika None, LR odds ratio pakai Wald approx (flag wald_fallback).
+
     Returns:
-        Dictionary: {
-            'logistic_regression': { 'odds_ratios': [...], 'permutation_importance': [...] },
-            'decision_tree': { 'feature_importance': [...], 'permutation_importance': [...] },
-            'support_vector_machine': { 'permutation_importance': [...] }
+        Dictionary per-model: {
+            'Logistic Regression': { odds_ratios, permutation_importance, shap },
+            'Decision Tree': { feature_importance, permutation_importance, shap },
+            'Support Vector Machine': { permutation_importance, shap }
         }
     """
     results = {}
@@ -159,9 +266,11 @@ def get_all_interpretability(models: Dict, X: pd.DataFrame, y: pd.Series,
     for name, model in models.items():
         model_results = {}
 
-        # Odds Ratio (hanya untuk Logistic Regression)
+        # Odds Ratio (hanya untuk Logistic Regression) — source of truth: firth
         if 'Logistic Regression' in name:
-            model_results['odds_ratios'] = get_lr_odds_ratios(model, feature_names)
+            model_results['odds_ratios'] = get_lr_odds_ratios(
+                model, feature_names, feature_selection_result
+            )
 
         # Tree Feature Importance (hanya untuk Decision Tree)
         if 'Decision Tree' in name:
@@ -171,6 +280,9 @@ def get_all_interpretability(models: Dict, X: pd.DataFrame, y: pd.Series,
         model_results['permutation_importance'] = get_permutation_importance_data(
             model, X, y, feature_names, n_repeats=30
         )
+
+        # SHAP (analitik, semua model)
+        model_results['shap'] = get_shap_values(model, X, y, feature_names)
 
         results[name] = model_results
 

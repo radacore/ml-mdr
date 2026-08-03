@@ -67,6 +67,19 @@ class DataPreprocessor:
         ]
         self.target_col = "Keberhasilan Pengobatan"
         self.feature_cols = self.numerical_cols + self.categorical_cols
+        # Subset fitur terpilih dari hybrid feature selection.
+        # Default = semua fitur (17) agar pkl lama tanpa attr ini tetap jalan.
+        self.selected_features: List[str] = list(self.feature_cols)
+
+    def __setstate__(self, state: Dict) -> None:
+        """Backward-compat: pkl lama tanpa attr selected_features → default ke feature_cols."""
+        self.__dict__.update(state)
+        if not hasattr(self, "selected_features"):
+            self.selected_features = list(self.feature_cols)
+
+    def set_selected_features(self, features: List[str]) -> None:
+        """Persist frozen selected subset dari hybrid feature selection. Filter ke feature_cols."""
+        self.selected_features = [f for f in features if f in self.feature_cols]
 
     def load_data(self, filepath: str) -> pd.DataFrame:
         """Load data dari file CSV"""
@@ -211,8 +224,9 @@ class DataPreprocessor:
         """
         Memisahkan features dan target dari DataFrame
         """
-        # Pilih hanya kolom yang ada di dataset
-        available_features = [col for col in self.feature_cols if col in df.columns]
+        # Pilih hanya kolom fitur terpilih (default = semua) yang ada di dataset
+        source_cols = self.selected_features if self.selected_features else self.feature_cols
+        available_features = [col for col in source_cols if col in df.columns]
         X = df[available_features]
         y = df[self.target_col]
         return X, y
@@ -285,8 +299,9 @@ class DataPreprocessor:
 
         df = pd.DataFrame([encoded_data])
 
-        # Pilih hanya kolom fitur
-        available_features = [col for col in self.feature_cols if col in df.columns]
+        # Pilih hanya kolom fitur terpilih (default = semua) yang tersedia di input
+        source_cols = self.selected_features if self.selected_features else self.feature_cols
+        available_features = [col for col in source_cols if col in df.columns]
         return df[available_features]
 
     def save(self, filepath: str):

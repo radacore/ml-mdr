@@ -4,6 +4,7 @@ import { Button } from '@/ShadcnComponents/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ShadcnComponents/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ShadcnComponents/ui/table';
 import { Alert, AlertDescription } from '@/ShadcnComponents/ui/alert';
+import { Badge } from '@/ShadcnComponents/ui/badge';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import {
@@ -84,10 +85,23 @@ interface PermutationImportanceEntry {
     importance_std: number;
 }
 
+interface ShapEntry {
+    feature: string;
+    shap_mean_abs: number;
+}
+
+interface ShapData {
+    method: 'linear' | 'tree_proxy' | 'permutation_fallback' | 'error';
+    features: ShapEntry[];
+    values?: number[][] | null;
+    detail?: string;
+}
+
 interface InterpretabilityData {
     odds_ratios?: OddsRatioEntry[];
     feature_importance?: FeatureImportanceEntry[];
     permutation_importance?: PermutationImportanceEntry[];
+    shap?: ShapData;
 }
 
 interface Statistics {
@@ -936,6 +950,91 @@ export default function Statistics({ statistics, curves, interpretability, error
                                         <Bar dataKey="importance_mean" name="Mean Importance" fill="#10b981" radius={[0, 4, 4, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    );
+                })()}
+
+                {/* SHAP Feature Importance — semua model (white-box) */}
+                {interpretability && (() => {
+                    const shapEntries = Object.entries(interpretability)
+                        .filter(([, v]) => v.shap && v.shap.features && v.shap.features.length > 0 && v.shap.method !== 'error');
+                    if (shapEntries.length === 0) return null;
+
+                    const methodLabels: Record<string, string> = {
+                        linear: 'LinearExplainer (analitik: φᵢ = βᵢ·(xᵢ − E[xᵢ]))',
+                        tree_proxy: 'Tree feature importance (proxy SHAP)',
+                        permutation_fallback: 'Permutation (fallback)',
+                    };
+                    const colors: Record<string, string> = {
+                        'Logistic Regression': '#8b5cf6',
+                        'Decision Tree': '#f59e0b',
+                        'Support Vector Machine': '#10b981',
+                    };
+
+                    return (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>SHAP Feature Importance (White-Box)</CardTitle>
+                                <CardDescription>
+                                    Kontribusi tiap fitur terhadap output model — rata-rata |SHAP value| tinggi = fitur paling menentukan prediksi.
+                                    Diimplementasikan analitik (tanpa package shap/numba).
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <Alert className="border-violet-200 bg-violet-50/40">
+                                    <AlertDescription className="text-sm text-slate-700">
+                                        <p className="font-semibold mb-1">Mengapa SHAP penting untuk disertasi?</p>
+                                        <p>
+                                            SHAP (SHapley Additive exPlanations) menjelaskan kontribusi setiap fitur pada prediksi
+                                            individual maupun agregat. Pendekatan <span className="font-medium">white-box</span> ini
+                                            menunjukkan pemahaman cara kerja model — tidak hanya akurasi, tapi juga
+                                            <em> interpretability</em>. Sesuai Lundberg &amp; Lee (2017), SHAP memberikan
+                                            atribusi yang adil (game-theoretic Shapley values).
+                                        </p>
+                                        <ul className="mt-2 ml-5 list-disc space-y-0.5 text-xs">
+                                            <li><span className="font-medium">Logistic Regression</span> — exact analytical: φᵢ = βᵢ·(xᵢ − E[xᵢ]) (ekuivalen LinearExplainer).</li>
+                                            <li><span className="font-medium">Decision Tree</span> — tree feature_importances_ sebagai proxy mean(|SHAP|).</li>
+                                            <li><span className="font-medium">SVM</span> — permutation fallback (Kernel SHAP terlalu berat untuk n=151).</li>
+                                        </ul>
+                                    </AlertDescription>
+                                </Alert>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    {shapEntries.map(([name, data]) => {
+                                        const sd = data.shap!;
+                                        const feats = sd.features.slice(0, 17);
+                                        const color = colors[name] || '#6366f1';
+                                        return (
+                                            <div key={name} className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="text-sm font-semibold">{name}</h4>
+                                                    <Badge variant="outline" className="border-violet-300 text-violet-700 text-[10px]">
+                                                        {methodLabels[sd.method] || sd.method}
+                                                    </Badge>
+                                                </div>
+                                                <ResponsiveContainer width="100%" height={Math.max(220, feats.length * 28)}>
+                                                    <BarChart data={feats} layout="vertical" margin={{ top: 5, right: 20, left: 80, bottom: 5 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" />
+                                                        <XAxis type="number" tick={{ fontSize: 10 }} />
+                                                        <YAxis type="category" dataKey="feature" width={75} tick={{ fontSize: 9 }} />
+                                                        <Tooltip formatter={(v: any) => Number(v).toFixed(4)} />
+                                                        <Bar dataKey="shap_mean_abs" name="mean(|SHAP|)" fill={color} radius={[0, 4, 4, 0]} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                                {feats.length > 0 && (
+                                                    <div className="rounded-md border bg-muted/30 p-2 text-xs">
+                                                        <span className="font-medium">Top:</span>{' '}
+                                                        <Badge variant="outline" className="text-[10px]">{feats[0].feature}</Badge>{' '}
+                                                        <span className="text-muted-foreground">
+                                                            (mean |SHAP| = {feats[0].shap_mean_abs.toFixed(4)})
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </CardContent>
                         </Card>
                     );

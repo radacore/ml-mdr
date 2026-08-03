@@ -34,7 +34,10 @@ class ModelTrainer:
         self.cv_results: Dict[str, Dict[str, Dict[str, Any]]] = {}
         self.best_params: Dict[str, Dict] = {}
         self.scaler = StandardScaler()
-        
+        # Hasil hybrid feature selection (populated by train())
+        self.feature_selection_result: Optional[Dict] = None
+        self.selected_features: Optional[List[str]] = None
+
         # Inisialisasi model-model
         self._init_models()
     
@@ -284,19 +287,37 @@ class ModelTrainer:
                 print("Warning: imbalanced-learn not installed. Skipping SMOTE.")
             except Exception as e:
                 print(f"Warning: SMOTE failed: {e}. Continuing without SMOTE.")
-        
+
+        # Hybrid Feature Selection (leakage-safe: hanya X_train post-SMOTE)
+        # Drives Kelompok A (firth), B (klinis), C (RFE/RF), pra-seleksi (corr/VIF/const).
+        print("\n=== Hybrid Feature Selection ===")
+        try:
+            from src.feature_selection import run_hybrid_selection
+        except ImportError:
+            # notebook path: src/ dir langsung di sys.path (flat import)
+            from feature_selection import run_hybrid_selection
+        self.feature_selection_result = run_hybrid_selection(
+            X_train, y_train, random_state=self.random_state
+        )
+        self.selected_features = self.feature_selection_result["selected_features"]
+        # Bekukan subset ke X_val & X_test (semua model pakai subset sama)
+        X_val = X_val[self.selected_features]
+        X_test = X_test[self.selected_features]
+        X_train = X_train[self.selected_features]
+        print(f"Selected features ({len(self.selected_features)}): {self.selected_features}")
+
         # Hyperparameter tuning (GridSearchCV on training data)
         print("\n=== Hyperparameter Tuning ===")
         best_params = self.hyperparameter_tuning(X_train, y_train)
-        
+
         # Cross validation (with tuned models on training data)
         print("\n=== Cross Validation ===")
         cv_results = self.cross_validate(X_train, y_train)
-        
+
         # Final training (refit on full training data with best params)
         print("\n=== Final Training ===")
         self.train_all_models(X_train, y_train)
-        
+
         return {
             'X_train': X_train,
             'X_val': X_val,
@@ -366,9 +387,11 @@ class ModelTrainer:
             'best_model_name': self.best_model_name,
             'cv_results': self.cv_results,
             'best_params': self.best_params,
+            'selected_features': self.selected_features,
+            'feature_selection_result': self.feature_selection_result,
         }
         joblib.dump(best_info, os.path.join(directory, 'best_model_info.pkl'))
-    
+
     def load_models(self, directory: str):
         """
         Memuat semua model dari direktori
@@ -379,7 +402,7 @@ class ModelTrainer:
             if os.path.exists(filepath):
                 self.models[name] = joblib.load(filepath)
                 print(f"Loaded {name} from {filepath}")
-        
+
         # Load info model terbaik
         best_info_path = os.path.join(directory, 'best_model_info.pkl')
         if os.path.exists(best_info_path):
@@ -387,6 +410,9 @@ class ModelTrainer:
             self.best_model_name = best_info.get('best_model_name')
             self.cv_results = best_info.get('cv_results', {})
             self.best_params = best_info.get('best_params', {})
+            # Restore hasil feature selection (cold-load path)
+            self.selected_features = best_info.get('selected_features')
+            self.feature_selection_result = best_info.get('feature_selection_result')
             if self.best_model_name:
                 loaded_best_model = self.models.get(self.best_model_name)
                 if loaded_best_model is not None:

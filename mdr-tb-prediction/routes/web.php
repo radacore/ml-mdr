@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     // Training Data Routes
     Route::get('/training-data/cleaning', [TrainingDataController::class, 'cleaning'])
         ->name('training-data.cleaning');
+    Route::get('/training-data/feature-selection', [TrainingDataController::class, 'featureSelection'])
+        ->name('training-data.feature-selection');
     Route::resource('training-data', TrainingDataController::class)->parameters([
         'training-data' => 'trainingData'
     ]);

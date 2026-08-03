@@ -95,6 +95,9 @@ def load_or_train_models():
         try:
             preprocessor = DataPreprocessor.load(preprocessor_path)
             trainer.load_models(models_dir)
+            # Sync selected_features dari best_model_info ke preprocessor (cold-load)
+            if trainer.selected_features:
+                preprocessor.set_selected_features(trainer.selected_features)
             is_trained = True
             print("Models loaded from disk")
 
@@ -127,7 +130,8 @@ def load_or_train_models():
                     )
                     feature_names = list(X_test.columns)
                     interpretability_data = get_all_interpretability(
-                        trainer.models, X_test, y_test, feature_names
+                        trainer.models, X_test, y_test, feature_names,
+                        feature_selection_result=trainer.feature_selection_result,
                     )
                     class_distribution_data = get_class_distribution(y)
                     print("Evaluation completed for loaded models")
@@ -175,13 +179,16 @@ def load_or_train_models():
                 training_results["X_test"],
                 training_results["y_test"],
                 feature_names,
+                feature_selection_result=trainer.feature_selection_result,
             )
             class_distribution_data = training_results.get(
                 "class_distribution", get_class_distribution(y)
             )
 
-            # Save models
+            # Save models + sync selected_features ke preprocessor
             trainer.save_models(models_dir)
+            if trainer.selected_features:
+                preprocessor.set_selected_features(trainer.selected_features)
             preprocessor.save(preprocessor_path)
 
             is_trained = True
@@ -245,9 +252,11 @@ def train_models():
             trainer.models, training_results["X_test"], training_results["y_test"]
         )
 
-        # Save
+        # Save + sync selected_features ke preprocessor
         models_dir = os.path.join(get_project_root(), "models")
         trainer.save_models(models_dir)
+        if trainer.selected_features:
+            preprocessor.set_selected_features(trainer.selected_features)
         preprocessor.save(os.path.join(models_dir, "preprocessor.pkl"))
 
         is_trained = True
@@ -367,14 +376,17 @@ def retrain_models():
             training_results["X_test"],
             training_results["y_test"],
             feature_names,
+            feature_selection_result=trainer.feature_selection_result,
         )
         class_distribution_data = training_results.get(
             "class_distribution", get_class_distribution(y)
         )
 
-        # Save
+        # Save + sync selected_features ke preprocessor
         models_dir = os.path.join(get_project_root(), "models")
         trainer.save_models(models_dir)
+        if trainer.selected_features:
+            preprocessor.set_selected_features(trainer.selected_features)
         preprocessor.save(os.path.join(models_dir, "preprocessor.pkl"))
 
         is_trained = True
@@ -497,8 +509,19 @@ def get_features():
             "categorical_features": preprocessor.categorical_cols,
             "target": preprocessor.target_col,
             "all_features": preprocessor.feature_cols,
+            "selected_features": getattr(preprocessor, "selected_features", preprocessor.feature_cols),
         }
     )
+
+
+@app.route("/feature-selection", methods=["GET"])
+def get_feature_selection():
+    """Hasil hybrid feature selection: summary, per-feature verdict, stability, correlation matrix."""
+    if not is_trained or trainer is None or not trainer.feature_selection_result:
+        return jsonify(
+            {"error": "Feature selection belum tersedia. Jalankan retrain pada ML Service."}
+        ), 400
+    return jsonify(trainer.feature_selection_result)
 
 
 @app.route("/curves", methods=["GET"])

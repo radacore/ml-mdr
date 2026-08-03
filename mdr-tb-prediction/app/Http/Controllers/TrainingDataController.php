@@ -195,6 +195,34 @@ class TrainingDataController extends Controller
     }
 
     /**
+     * Tampilkan halaman Hybrid Feature Selection: verdict per-fitur
+     * (Accepted/Rejected + alasan) dari ML service /feature-selection.
+     * Mencerminkan metodologi Filter-Wrapper (Kelompok A/B/C + pra-seleksi).
+     */
+    public function featureSelection()
+    {
+        $mlServiceUrl = env('ML_SERVICE_URL', 'http://localhost:5000');
+        $featureSelection = null;
+        $error = null;
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::get("{$mlServiceUrl}/feature-selection");
+            if ($response->successful()) {
+                $featureSelection = $response->json();
+            } else {
+                $error = 'Feature selection belum tersedia. Jalankan retrain pada ML Service.';
+            }
+        } catch (\Exception $e) {
+            $error = 'Tidak dapat terhubung ke ML Service. Jalankan ML Service terlebih dahulu.';
+        }
+
+        return Inertia::render('TrainingData/FeatureSelection', [
+            'featureSelection' => $featureSelection,
+            'error' => $error,
+        ]);
+    }
+
+    /**
      * Linear interpolation quantile (sama dengan default pandas.quantile).
      */
     protected function quantile(array $sortedValues, float $q): float

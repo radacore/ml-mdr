@@ -58,6 +58,12 @@ export default function Authenticated({
                                     Data Training
                                 </NavLink>
                                 <NavLink
+                                    href={route('training-data.feature-selection')}
+                                    active={route().current('training-data.feature-selection')}
+                                >
+                                    Seleksi Fitur
+                                </NavLink>
+                                <NavLink
                                     href={route('settings.index')}
                                     active={route().current('settings.index')}
                                 >
