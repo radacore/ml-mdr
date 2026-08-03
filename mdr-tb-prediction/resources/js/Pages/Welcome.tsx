@@ -67,14 +67,19 @@ export default function Welcome() {
         panduan_pengobatan: '',
     });
 
-    // Auto-calculate IMT only (Status Gizi is now manual)
+    // Auto-calculate IMT and Status Gizi from BB/TB
     useEffect(() => {
         if (formData.bb && formData.tb) {
             const bb = parseFloat(formData.bb);
             const tb = parseFloat(formData.tb) / 100;
             if (bb > 0 && tb > 0) {
-                const imt = (bb / (tb * tb)).toFixed(1);
-                setFormData(prev => ({ ...prev, imt }));
+                const imt = bb / (tb * tb);
+                const imtStr = imt.toFixed(1);
+                let statusGizi = '';
+                if (imt < 18.5) statusGizi = '0';
+                else if (imt < 23.0) statusGizi = '1';
+                else statusGizi = '2';
+                setFormData(prev => ({ ...prev, imt: imtStr, status_gizi: statusGizi }));
             }
         }
     }, [formData.bb, formData.tb]);
@@ -510,12 +515,13 @@ export default function Welcome() {
                                                     </div>
                                                 </div>
                                                 <div className="mt-3">
-                                                    <Label>Status Gizi</Label>
+                                                    <Label>Status Gizi <span className="text-xs text-gray-500">(otomatis)</span></Label>
                                                     <Select
                                                         value={formData.status_gizi}
                                                         onValueChange={(v) => setFormData({ ...formData, status_gizi: v })}
+                                                        disabled
                                                     >
-                                                        <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                                                        <SelectTrigger><SelectValue placeholder="Auto-terisi" /></SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="0">Gizi Kurang</SelectItem>
                                                             <SelectItem value="1">Gizi Normal</SelectItem>
