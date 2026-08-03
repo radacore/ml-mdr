@@ -109,7 +109,7 @@ export function AppSidebar() {
                                         SRI-Predict
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        TB-MDR
+                                        MDR-TB
                                     </span>
                                 </div>
                             </Link>

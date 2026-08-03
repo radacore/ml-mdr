@@ -70,7 +70,7 @@ export default function Landing({ canLogin, canRegister }: Props) {
     return (
         <>
             <Head>
-                <title>SRI-Predict TB-MDR | Prediksi Pengobatan Tuberkulosis Cerdas</title>
+                <title>SRI-Predict MDR-TB | Prediksi Pengobatan Tuberkulosis Cerdas</title>
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link
                     rel="preconnect"
@@ -219,7 +219,7 @@ export default function Landing({ canLogin, canRegister }: Props) {
                 <section id="solusi" className="py-20 bg-white">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center max-w-3xl mx-auto mb-16">
-                            <h2 className="text-purple-600 font-semibold tracking-wide uppercase text-sm mb-2">Mengapa SRI-Predict TB-MDR?</h2>
+                            <h2 className="text-purple-600 font-semibold tracking-wide uppercase text-sm mb-2">Mengapa SRI-Predict MDR-TB?</h2>
                             <h3 className="text-3xl font-bold text-gray-900 mb-4">Tantangan TB-MDR Masa Kini</h3>
                             <p className="text-gray-600 text-lg">
                                 Pengobatan TB-MDR membutuhkan durasi panjang

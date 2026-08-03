@@ -10,7 +10,7 @@ export default function Footer() {
                             <div className="bg-purple-600 p-1.5 rounded-md">
                                 <Activity className="text-white h-5 w-5" />
                             </div>
-                            <span className="font-bold text-xl text-gray-900">SRI-Predict TB-MDR</span>
+                            <span className="font-bold text-xl text-gray-900">SRI-Predict MDR-TB</span>
                         </div>
                         <p className="text-gray-500 max-w-xs mb-6">
                             Menyelamatkan nyawa melalui prediksi berbasis data.
@@ -118,7 +118,7 @@ export default function Footer() {
                     </div>
                 </div>
                 <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                    <p>&copy; {new Date().getFullYear()} SRI-Predict TB-MDR. Hak cipta dilindungi.</p>
+                    <p>&copy; {new Date().getFullYear()} SRI-Predict MDR-TB. Hak cipta dilindungi.</p>
                     <div className="flex space-x-6 mt-4 md:mt-0">
                         <a href="#" className="hover:text-gray-900">
                             Kebijakan Privasi

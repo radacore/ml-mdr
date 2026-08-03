@@ -57,7 +57,7 @@ export default function Login({
                                 <Activity className="h-6 w-6 text-white" />
                             </div>
                             <span className="text-xl font-bold tracking-tight">
-                                SRI-Predict TB-MDR
+                                SRI-Predict MDR-TB
                             </span>
                         </div>
 
@@ -110,7 +110,7 @@ export default function Login({
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white">
                                 <Activity className="h-5 w-5" />
                             </div>
-                            <span className="text-lg font-bold">SRI-Predict TB-MDR</span>
+                            <span className="text-lg font-bold">SRI-Predict MDR-TB</span>
                         </div>
 
                         <Card className="shadow-xl border-0">

@@ -51,7 +51,7 @@ export default function Navbar({ canLogin = true, minimal = false }: NavbarProps
                             <Activity className="text-white h-6 w-6" />
                         </div>
                         <span className="font-bold text-xl tracking-tight text-gray-900">
-                            SRI<span className="text-purple-600">-Predict</span> TB-MDR
+                            SRI<span className="text-purple-600">-Predict</span> MDR-TB
                         </span>
                     </div>
 
