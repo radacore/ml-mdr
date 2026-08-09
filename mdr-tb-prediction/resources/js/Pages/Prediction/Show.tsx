@@ -359,6 +359,11 @@ export default function Show({ prediction, factorContributions }: Props) {
                                         * z = (x−μ)/σ adalah standardisasi; μ &amp; σ diambil dari data latih. Nilai dapat dibulatkan sehingga
                                         penjumlahan manual bisa sedikit berbeda dari hasil model.
                                     </p>
+                                    <p className="text-[11px] text-slate-400">
+                                        * <strong>Ket.Usia</strong> adalah umur pasien dalam tahun (variabel numerik), bukan kode berlabel.
+                                        Itulah sebabnya kolom "Nilai (x)" menampilkan angka umur (mis. 29 tahun), sementara fitur lain
+                                        menampilkan kode 0/1 karena bersifat kategorikal.
+                                    </p>
                                 </div>
                             )}
                             {isSuccess ? (
