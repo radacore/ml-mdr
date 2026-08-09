@@ -511,6 +511,164 @@ def compute_lr_factor_contributions(
         return {"error": str(e)}
 
 
+def compute_dt_calculation(
+    input_processed: pd.DataFrame, model_name: str
+) -> dict:
+    """
+    Rincian perhitungan Decision Tree: telusuri jalur percabangan pasien ini
+    dari root ke leaf, tampilkan aturan split (fitur, ambang, nilai z-skor),
+    gini, jumlah sampel, dan proporsi kelas tiap simpul. Probabilitas prediksi
+    diambil dari distribusi kelas di simpul daun.
+
+    Returns dict {type, model, path:[...]} atau {'error': ...}.
+    """
+    try:
+        if trainer is None or preprocessor is None:
+            return {"error": "Models not trained yet"}
+        pipe = trainer.models.get("Decision Tree")
+        if pipe is None:
+            return {"error": "Decision Tree model not available"}
+
+        clf = pipe.named_steps["classifier"]
+        scaler = pipe.named_steps.get("scaler")
+        X_scaled = scaler.transform(input_processed.values) if scaler else input_processed.values
+        x0 = X_scaled[0]
+        names = list(input_processed.columns)
+
+        tree = clf.tree_
+        path: List[dict] = []
+        node = 0
+        while True:
+            is_leaf = int(tree.children_left[node]) == int(tree.children_right[node])
+            frac = [round(float(v), 4) for v in tree.value[node][0]]
+            samples = int(tree.n_node_samples[node])
+            rec = {
+                "node": int(node),
+                "leaf": is_leaf,
+                "samples": samples,
+                "class_fraction": frac,
+                "class_count": [round(f * samples) for f in frac],
+                "gini": round(float(tree.impurity[node]), 4),
+            }
+            if is_leaf:
+                path.append(rec)
+                break
+            f = int(tree.feature[node])
+            thr = float(tree.threshold[node])
+            go_left = bool(x0[f] <= thr)
+            rec["feature"] = names[f]
+            rec["threshold"] = thr
+            rec["scaled_value"] = float(x0[f])
+            rec["go_left"] = go_left
+            path.append(rec)
+            node = int(tree.children_left[node]) if go_left else int(tree.children_right[node])
+
+        proba = pipe.predict_proba(input_processed)[0] if hasattr(pipe, "predict_proba") else None
+        probability = float(proba[0]) * 100 if proba is not None else (path[-1]["class_fraction"][0] * 100)
+
+        return {
+            "type": "dt",
+            "model": "Decision Tree",
+            "probability": round(probability, 4),
+            "path": path,
+        }
+    except Exception as e:
+        print(f"Error computing DT calculation: {e}")
+        return {"error": str(e)}
+
+
+def compute_svm_calculation(
+    input_processed: pd.DataFrame, model_name: str
+) -> dict:
+    """
+    Rincian perhitungan SVM RBF:
+    - nilai fungsi keputusan f(x) = Σᵢ αᵢ·yᵢ·K(x, xᵢ) + ρ;
+    - kernel RBF K = exp(−γ·‖x−xᵢ‖²) dengan γ = 1/(n_fitur) pada data terstandarisasi;
+    - probabilitas via Platt scaling P(Berhasil) = 1/(1 + e^{B − A·f});
+    - top support vector yang paling berpengaruh (|α·K| terbesar).
+    Returns dict {"type":"svm", ...} atau dict {'error': ...}.
+    """
+    try:
+        if trainer is None or preprocessor is None:
+            return {"error": "Models not trained yet"}
+        pipe = trainer.models.get("Support Vector Machine")
+        if pipe is None:
+            return {"error": "Support Vector Machine model not available"}
+
+        clf = pipe.named_steps["classifier"]
+        scaler = pipe.named_steps.get("scaler")
+        X_scaled = scaler.transform(input_processed.values) if scaler else input_processed.values
+        x0 = X_scaled[0]
+
+        f = float(clf.decision_function(X_scaled)[0])
+        proba = clf.predict_proba(X_scaled)[0]
+        probability = float(proba[0]) * 100
+        gamma = float(getattr(clf, "_gamma", 0.0))
+        rho = float(clf.intercept_[0])
+        n_support = int(clf.n_support_.sum())
+
+        A = None
+        B = None
+        if hasattr(clf, "probA_") and len(clf.probA_) > 0:
+            A = float(clf.probA_[0])
+            B = float(clf.probB_[0])
+
+        # Kontribusi tiap support vector: αᵢ · K(x, xᵢ)
+        sv = clf.support_vectors_
+        dual = clf.dual_coef_[0]
+        support_idx = clf.support_
+
+        def _rbf(a, b):
+            return float(np.exp(-gamma * np.sum((a - b) ** 2)))
+
+        top = []
+        for i in range(len(sv)):
+            k = _rbf(x0, sv[i])
+            c = float(dual[i]) * k
+            top.append(
+                {
+                    "index": int(i),
+                    "support_index": int(support_idx[i]),
+                    "kernel": round(k, 4),
+                    "dual": round(float(dual[i]), 4),
+                    "contribution": round(c, 6),
+                }
+            )
+        top.sort(key=lambda t: -abs(t["contribution"]))
+        top = top[:5]
+
+        return {
+            "type": "svm",
+            "model": "Support Vector Machine",
+            "f": round(f, 6),
+            "rho": round(rho, 6),
+            "gamma": round(gamma, 6),
+            "n_support": n_support,
+            "A": A,
+            "B": B,
+            "probability": round(probability, 4),
+            "top_sv": top,
+        }
+    except Exception as e:
+        print(f"Error computing SVM calculation: {e}")
+        return {"error": str(e)}
+
+
+def compute_model_calculation(
+    input_processed: pd.DataFrame, model_name: str
+):
+    """Membuat rincian angka perhitungan sesuai model aktif."""
+    if input_processed is None:
+        return None
+    if model_name == "Logistic Regression":
+        return compute_lr_factor_contributions(input_processed, model_name)
+    if model_name == "Decision Tree":
+        return compute_dt_calculation(input_processed, model_name)
+    if model_name == "Support Vector Machine":
+        return compute_svm_calculation(input_processed, model_name)
+    return None
+
+
 def run_prediction(data):
     """Run preprocess + prediksi + proba secara terpusat untuk /predict dan /explain."""
     global preprocessor, trainer
@@ -565,13 +723,11 @@ def predict():
         if not data:
             return jsonify({"error": "No input data provided"}), 400
 
-        result = run_prediction(data)  # note: mutates? bright downstream
+        result = run_prediction(data)
         input_processed = result.pop("input_processed", None)
         effective_model = result["model_used"]
 
-        contribution = None
-        if effective_model == "Logistic Regression" and input_processed is not None:
-            contribution = compute_lr_factor_contributions(input_processed, effective_model)
+        contribution = compute_model_calculation(input_processed, effective_model)
 
         result["factor_contributions"] = contribution
 
@@ -599,9 +755,7 @@ def explain():
         input_processed = result.pop("input_processed", None)
         effective_model = result["model_name"]
 
-        contribution = None
-        if effective_model == "Logistic Regression" and input_processed is not None:
-            contribution = compute_lr_factor_contributions(input_processed, effective_model)
+        contribution = compute_model_calculation(input_processed, effective_model)
 
         result["factor_contributions"] = contribution
 

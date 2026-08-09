@@ -29,6 +29,27 @@ interface FactorContribution {
     delta_pp: number;
 }
 
+interface DTPathNode {
+    node: number;
+    leaf: boolean;
+    samples: number;
+    class_fraction: number[];
+    class_count: number[];
+    gini: number;
+    feature?: string;
+    threshold?: number;
+    scaled_value?: number;
+    go_left?: boolean;
+}
+
+interface TopSVC {
+    index: number;
+    support_index: number;
+    kernel: number;
+    dual: number;
+    contribution: number;
+}
+
 interface FactorContributions {
     intercept: number;
     base_probability: number;
@@ -36,6 +57,17 @@ interface FactorContributions {
     z_raw?: number;
     z_final?: number;
     features: FactorContribution[];
+    type?: 'dt' | 'svm';
+    path?: DTPathNode[];
+    f?: number;
+    rho?: number;
+    gamma?: number;
+    n_support?: number;
+    platt_A?: number;
+    platt_B?: number;
+    A?: number;
+    B?: number;
+    top_sv?: TopSVC[];
 }
 
 interface Props {
@@ -151,6 +183,19 @@ export default function Show({ prediction, factorContributions }: Props) {
 
     // True bila data attribusi lengkap utk tabel angka (dari model terbaru)
     const hasDetailCalc = hasContrib && factorContributions?.z_final !== undefined;
+
+    // True bila rincian kalkulasi DT/SVM tersedia dari /explain
+    const dtPath = factorContributions?.type === 'dt' ? (factorContributions.path ?? null) : null;
+    const dtLeaf = dtPath && dtPath.length ? dtPath[dtPath.length - 1] : null;
+    const hasDTCalc = !!dtPath;
+
+    const svmFC = factorContributions?.type === 'svm' ? factorContributions : null;
+    const hasSVMCc = !!svmFC && typeof svmFC.f === 'number';
+    const svmF = svmFC?.f ?? 0;
+    const svmA = svmFC?.A ?? svmFC?.platt_A ?? 0;
+    const svmB = svmFC?.B ?? svmFC?.platt_B ?? 0;
+    const svmExp = svmB - svmA * svmF;
+    const svmProb = 1 / (1 + Math.exp(svmExp));
 
     // Nilai antara untuk rincian kalkulasi sigmoid
     const zRaw = factorContributions?.z_raw;
@@ -364,6 +409,127 @@ export default function Show({ prediction, factorContributions }: Props) {
                                         Itulah sebabnya kolom "Nilai (x)" menampilkan angka umur (mis. 29 tahun), sementara fitur lain
                                         menampilkan kode 0/1 karena bersifat kategorikal.
                                     </p>
+                                </div>
+                            )}
+                            {hasDTCalc && (
+                                <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
+                                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                        🌳 Rincian Angka Perhitungan (Decision Tree)
+                                    </h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        Pasien menelusuri satu jalur dari <em>root</em> ke <em>leaf</em>. Ambang split &amp; nilai fitur
+                                        ditampilkan dalam skala z (hasil <InlineMath math="StandardScaler" />). Di simpul daun,
+                                        probabilitas prediksi diambil dari komposisi kelas sampel latih.
+                                    </p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
+                                            <thead>
+                                                <tr className="bg-slate-100 dark:bg-slate-800">
+                                                    <th className="border p-2 text-left">Node</th>
+                                                    <th className="border p-2 text-left">Aturan (fitur ≤ ambang)</th>
+                                                    <th className="border p-2 text-center">Nilai z</th>
+                                                    <th className="border p-2 text-center">Gini</th>
+                                                    <th className="border p-2 text-center">Sampel</th>
+                                                    <th className="border p-2 text-center">Berhasil / Tidak</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {dtPath?.map((n) => (
+                                                    n.leaf ? (
+                                                        <tr key={`leaf-${n.node}`} className="bg-emerald-50 dark:bg-emerald-950/40 font-semibold">
+                                                            <td className="border p-2">{n.node} (daun)</td>
+                                                            <td className="border p-2" colSpan={3}>Leaf node</td>
+                                                            <td className="border p-2 text-center">{n.samples}</td>
+                                                            <td className="border p-2 text-center">
+                                                                {(n.class_fraction[0] * 100).toFixed(1)}% / {(n.class_fraction[1] * 100).toFixed(1)}%
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        <tr key={`split-${n.node}`}>
+                                                            <td className="border p-2">{n.node}</td>
+                                                            <td className="border p-2">{n.feature} ≤ {fmtNum(n.threshold)}</td>
+                                                            <td className="border p-2 text-center font-mono">{fmtNum(n.scaled_value)}</td>
+                                                            <td className="border p-2 text-center font-mono">{fmtNum(n.gini)}</td>
+                                                            <td className="border p-2 text-center">{n.samples}</td>
+                                                            <td className="border p-2 text-center">
+                                                                {(n.class_fraction[0] * 100).toFixed(1)}% / {(n.class_fraction[1] * 100).toFixed(1)}%
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {dtLeaf && (
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg text-xs font-mono space-y-1">
+                                            <p>
+                                                P(Berhasil) = {dtLeaf.class_count[0]}/{dtLeaf.samples} ≈ {(dtLeaf.class_fraction[0] * 100).toFixed(2)}%
+                                            </p>
+                                            <p className="text-slate-400">
+                                                * Sampel dihitung dengan bobot <InlineMath>class_weight="balanced"</InlineMath>.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {hasSVMCc && (
+                                <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
+                                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                        🎯 Rincian Angka Perhitungan (Support Vector Machine)
+                                    </h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        Nilai keputusan <InlineMath math="f(x)" /> dihitung dari bobot support vector pada kernel RBF,
+                                        lalu dikonversi ke probabilitas melalui <em>Platt scaling</em>.
+                                    </p>
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-1.5">
+                                        <p>
+                                            ① <InlineMath math="f(x) = \sum_i \alpha_i y_i K(x_i, x) + \rho" /> = {fmtNum(svmF, 6)}
+                                        </p>
+                                        <p className="pl-4">
+                                            bias <InlineMath math="\rho" /> = {fmtNum(svmFC.rho)} · jumlah SV = {svmFC.n_support || '—'}
+                                        </p>
+                                        <p className="pl-4">
+                                            kernel RBF <InlineMath math="K(x_i,x) = e^{-\gamma \|x_i - x\|^2}" /> dengan <InlineMath math="\gamma = 1/7 \approx" /> {fmtNum(svmFC.gamma)}
+                                        </p>
+                                        <p>
+                                            ② Platt scaling: <InlineMath math="P(\text{Berhasil}) = \frac{1}{1+e^{-(A f(x) + B)}}" />
+                                        </p>
+                                        <p className="pl-4">
+                                            A = {fmtNum(svmA)} · B = {fmtNum(svmB)} → A·f(x) + B = {fmtNum(svmExp)}
+                                        </p>
+                                        <p className="pl-4">
+                                            P(Berhasil) = 1/(1 + e<sup>−({fmtNum(svmExp)})</sup>) = {fmtNum(svmProb)} ≈ {(svmProb * 100).toFixed(2)}%
+                                        </p>
+                                    </div>
+                                    {svmFC.top_sv && svmFC.top_sv.length > 0 && (
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                                Top-5 Support Vector (kontribusi terbesar ke {<InlineMath math="f(x)" />}):
+                                            </p>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
+                                                    <thead>
+                                                        <tr className="bg-slate-100 dark:bg-slate-800">
+                                                            <th className="border p-2 text-left">#</th>
+                                                            <th className="border p-2 text-center">α</th>
+                                                            <th className="border p-2 text-center">K(x,xᵢ)</th>
+                                                            <th className="border p-2 text-center">α·K</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {svmFC.top_sv.map((s) => (
+                                                            <tr key={`sv-${s.index}`}>
+                                                                <td className="border p-2">{s.index + 1}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(s.dual)}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(s.kernel)}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(s.contribution)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {isSuccess ? (
@@ -638,7 +804,7 @@ export default function Show({ prediction, factorContributions }: Props) {
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                                 Data pasien mengikuti percabangan pohon dari root node hingga leaf node:
                                             </p>
-                                            <div className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg text-sm">
+<div className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg text-sm">
                                                 <pre className="whitespace-pre-wrap">
                                                     {`IF Kepatuhan Minum Obat = "${data.kepatuhan_minum_obat}"
    AND Efek Samping = "${data.efek_samping_obat}"
@@ -648,6 +814,27 @@ THEN Prediksi = ${prediction.prediction_result}`}
                                                 </pre>
                                             </div>
                                         </div>
+
+                                        {hasDTCalc && dtPath && (
+                                            <div className="space-y-3">
+                                                <p className="font-medium">d) Jalur pohon pasien ini (angka nyata):</p>
+                                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto font-mono text-sm">
+                                                    <div className="space-y-1.5">
+                                                        {dtPath.map((n) => (
+                                                            n.leaf ? (
+                                                                <p key={`mleaf-${n.node}`} className="text-green-600 font-semibold">
+                                                                    → Leaf {n.node}: P(Berhasil) = {n.class_count[0]}/{n.samples} ≈ {(n.class_fraction[0] * 100).toFixed(2)}%
+                                                                </p>
+                                                            ) : (
+                                                                <p key={`msplit-${n.node}`}>
+                                                                    {n.feature} ≤ {fmtNum(n.threshold)} (z pasien = {fmtNum(n.scaled_value)}) → {n.go_left ? 'kiri ✓' : 'kanan'}
+                                                                </p>
+                                                            )
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -742,10 +929,24 @@ THEN Prediksi = ${prediction.prediction_result}`}
                                         </div>
 
                                         <div className="space-y-3">
-                                            <p className="font-medium">c) Contoh Substitusi Angka pada Data Pasien Ini:</p>
-                                            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
-                                                <BlockMath math={`f(x) = \\left( \\alpha_1 K(x_1, [${encodedFeatures.slice(0, 3).map(f => f.encoded).join(', ')}...]) \\right) + \\cdots + b`} />
-                                            </div>
+                                            <p className="font-medium">c) Substitusi Angka pada Data Pasien Ini:</p>
+                                            {hasSVMCc ? (
+                                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto font-mono text-sm space-y-1.5">
+                                                    <p>f(x) = Σ αᵢ·yᵢ·K(xᵢ, x) + ρ = {fmtNum(svmF, 6)}</p>
+                                                    <p className="pl-4">ρ = {fmtNum(svmFC.rho)} · jumlah SV = {svmFC.n_support || '—'}</p>
+                                                    <p>Kernel RBF: γ = 1/7 ≈ {fmtNum(svmFC.gamma)}</p>
+                                                    <p className="text-slate-400">Kontribusi SV terbesar (α·K):</p>
+                                                    {svmFC.top_sv?.map((s) => (
+                                                        <p key={`msub-${s.index}`} className="pl-4">
+                                                            SV #{s.index + 1}: α = {fmtNum(s.dual)} · K(x,xᵢ) = {fmtNum(s.kernel)} → {fmtNum(s.contribution)}
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
+                                                    <BlockMath math={`f(x) = \\left( \\alpha_1 K(x_1, [${encodedFeatures.slice(0, 3).map(f => f.encoded).join(', ')}...]) \\right) + \\cdots + b`} />
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="space-y-3">
@@ -753,6 +954,18 @@ THEN Prediksi = ${prediction.prediction_result}`}
                                             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto">
                                                 <BlockMath math="P(Y=1|X) = \frac{1}{1 + \exp(A \cdot f(x) + B)}" />
                                             </div>
+                                            {hasSVMCc && (
+                                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto font-mono text-sm space-y-1.5">
+                                                    <p>A = {fmtNum(svmA)} · f(x) = {fmtNum(svmF, 6)} · B = {fmtNum(svmB)}</p>
+                                                    <p>A·f(x) + B = {fmtNum(svmExp)}</p>
+                                                    <p>
+                                                        P(Berhasil) = 1/(1 + e<sup>−({fmtNum(svmExp)})</sup>) = 1/(1 + e<sup>{fmtNum(-svmExp)}</sup>) ≈ {fmtNum(svmProb, 6)}
+                                                    </p>
+                                                    <p className="font-semibold text-green-600">
+                                                        → {(svmProb * 100).toFixed(2)}%
+                                                    </p>
+                                                </div>
+                                            )}
                                             <p className="text-xs text-gray-500">
                                                 Nilai jarak dari garis batas (hyperplane) <InlineMath math="f(x)" /> dikonversi menjadi persentase probabilitas menggunakan metode Platt Scaling.
                                             </p>

@@ -273,17 +273,20 @@ class PredictionController extends Controller
     {
         $factorContributions = $prediction->factor_contributions;
 
-        // Prediksi tanpa attribusi tersimpan ATAU data attribusi versi lama (tanpa
-        // detail angka z/koefisien) -> hitung ulang via /explain agar tabel angka
-        // perhitungan (Opsi 1) tetap tampil lengkap.
+        // Prediksi lama tanpa attribusi tersimpan ATAU versi attribusi yang
+        // belum punya data detail -> hitung ulang via /explain agar tabel angka
+        // perhitungan (Rincian) tetap tampil untuk semua model.
         $needsRefresh = empty($factorContributions) ||
-            !isset($factorContributions['z_final']) ||
-            (isset($factorContributions['features'][0]) && !isset($factorContributions['features'][0]['scaled_value']));
-        if ($needsRefresh && $prediction->model_used === 'Logistic Regression') {
+            ($prediction->model_used === 'Logistic Regression' && !isset($factorContributions['z_final'])) ||
+            ($prediction->model_used === 'Logistic Regression' && isset($factorContributions['features'][0]) && !isset($factorContributions['features'][0]['scaled_value'])) ||
+            (in_array($prediction->model_used, ['Decision Tree', 'Support Vector Machine']) && !isset($factorContributions['type']));
+        if ($needsRefresh) {
             try {
+                $payload = $this->buildMlInput($prediction->patient_data);
+                $payload['model_name'] = $prediction->model_used;
                 $response = Http::post(
                     "{$this->mlServiceUrl}/explain",
-                    $this->buildMlInput($prediction->patient_data)
+                    $payload
                 );
                 if ($response->successful()) {
                     $factorContributions = $response->json()['factor_contributions'] ?? null;
