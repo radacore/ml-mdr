@@ -10,9 +10,12 @@ Endpoints:
 - GET /statistics - Statistik model
 """
 
+import math
 import os
 import sys
+from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 import requests
 from flask import Flask, jsonify, request
@@ -34,9 +37,9 @@ LARAVEL_API_URL = os.environ.get("LARAVEL_API_URL", "http://localhost:8000/api")
 
 
 # Global variables
-preprocessor = None
-trainer = None
-evaluator = None
+preprocessor: Optional[DataPreprocessor] = None
+trainer: Optional[ModelTrainer] = None
+evaluator: Optional[ModelEvaluator] = None
 is_trained = False
 training_results = None
 evaluation_results = None
@@ -409,6 +412,145 @@ def retrain_models():
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 
+def _sigmoid(z):
+    """Fungsi sigmoid yang stabil secara numerik."""
+    z = np.clip(z, -700, 700)
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def compute_lr_factor_contributions(
+    input_processed: pd.DataFrame, model_name: str
+) -> dict:
+    """
+    Attribusi SHAP eksak untuk Logistic Regression (model linear).
+
+    Untuk LR dengan StandardScaler: φᵢ = βᵢ·(x_scaledᵢ − E[x_scaledᵢ]) dengan
+    E[x_scaledᵢ] = 0, sehingga φᵢ = βᵢ·x_scaledᵢ dan logit z = intercept + Σ φᵢ.
+    Probabilitas berdasar 'pengaruh terhadap probabilitas' (pp) dihitung dengan
+    alokasi kumulatif terurut |φᵢ| menurun (urutan pengaruh terbesar dulu).
+
+    Returns dict {intercept, probability, base_probability, z_raw, z_final, features:[...]}
+    atau dict {'error': ...} bila model bukan Logistic Regression / gagal.
+    """
+    try:
+        if trainer is None or preprocessor is None:
+            return {"error": "Models not trained yet"}
+        lr_pipeline = trainer.models.get("Logistic Regression")
+        if lr_pipeline is None:
+            return {"error": "Logistic Regression model not available"}
+
+        classifier = lr_pipeline.named_steps["classifier"]
+        scaler = lr_pipeline.named_steps.get("scaler")
+
+        coefs = np.asarray(classifier.coef_[0])
+        intercept = float(classifier.intercept_[0])
+
+        X_scaled = scaler.transform(input_processed.values) if scaler else input_processed.values
+        x0 = X_scaled[0]
+        x_raw = np.asarray(input_processed.values)[0]
+
+        feature_names = list(input_processed.columns)
+        n = len(feature_names)
+
+        # φᵢ_raw = βᵢ * x_scaledᵢ  (E[x_scaled]=0), dalam ruang logit mentah sklearn.
+        # Kelas "Berhasil" berada di sisi NEGATIF logit mentah, jadi untuk
+        # orientasi tampilan "Berhasil" kita pakai zB = −z = (−intercept) + Σ(−φᵢ_raw).
+        ms = []
+        ss = []
+        if scaler is not None:
+            ms = list(np.asarray(scaler.mean_).ravel()) if hasattr(scaler, "mean_") else []
+            ss = list(np.asarray(scaler.scale_).ravel()) if hasattr(scaler, "scale_") else []
+            if len(ms) == 0 or len(ss) == 0:
+                ms, ss = [], []
+
+        phi_raw = [float(coefs[i]) * float(x0[i]) for i in range(n)]
+        contributions = [-phi_raw[i] for i in range(n)]  # sisi Berhasil
+        base_logit = -intercept
+
+        z_raw = intercept + sum(phi_raw)
+        z_final = -z_raw  # logit dalam orientasi "Berhasil"
+        pB_final = _sigmoid(z_final)
+        pB_base = _sigmoid(base_logit)
+
+        # Alokasi umulatif terurut |φᵢ| menurun -> delta_pp per faktor (sisi Berhasil)
+        ordered = sorted(
+            zip(feature_names, phi_raw, contributions),
+            key=lambda t: -abs(t[2]),
+        )
+        zB_cur = base_logit
+        features = []
+        for name, raw, contrib in ordered:
+            i = feature_names.index(name)
+            zB_new = zB_cur + contrib
+            delta_pp = (_sigmoid(zB_new) - _sigmoid(zB_cur)) * 100
+            feat = {
+                "feature": name,
+                "raw_value": float(x_raw[i]),
+                "scaled_value": float(x0[i]),
+                "coefficient": float(coefs[i]),
+                "contribution_raw": float(raw),
+                "contribution_logit": float(contrib),
+                "delta_pp": float(delta_pp),
+            }
+            if ms and ss:
+                feat["scaled_mean"] = float(ms[i])
+                feat["scaled_std"] = float(ss[i])
+            features.append(feat)
+            zB_cur = zB_new
+
+        return {
+            "intercept": intercept,
+            "base_probability": float(pB_base * 100),
+            "probability": float(pB_final * 100),
+            "z_raw": float(z_raw),
+            "z_final": float(z_final),
+            "features": features,
+        }
+    except Exception as e:
+        print(f"Error computing LR factor contributions: {e}")
+        return {"error": str(e)}
+
+
+def run_prediction(data):
+    """Run preprocess + prediksi + proba secara terpusat untuk /predict dan /explain."""
+    global preprocessor, trainer
+
+    if preprocessor is None or trainer is None:
+        raise RuntimeError("Models not trained yet")
+
+    model_name = data.pop("model_name", None)
+
+    input_processed = preprocessor.preprocess_single_input(data)
+
+    prediction = trainer.predict(input_processed, model_name)
+    probabilities = trainer.predict_proba(input_processed, model_name)
+
+    if "Keberhasilan Pengobatan" in preprocessor.label_decoders:
+        prediction_label = preprocessor.decode_value(
+            "Keberhasilan Pengobatan", int(prediction[0])
+        )
+    else:
+        prediction_label = "Berhasil" if prediction[0] == 0 else "Tidak Berhasil"
+
+    confidence = float(max(probabilities[0])) * 100
+    effective_model = model_name if model_name else trainer.best_model_name
+
+    return {
+        "prediction": prediction_label,
+        "prediction_code": int(prediction[0]),
+        "confidence": confidence,
+        "model_used": effective_model,
+        "probabilities": {
+            "Berhasil": float(probabilities[0][0]) * 100,
+            "Tidak Berhasil": float(probabilities[0][1]) * 100
+            if len(probabilities[0]) > 1
+            else 0,
+        },
+        "input_processed": input_processed,
+        "model_name": effective_model,
+    }
+
+
 @app.route("/predict", methods=["POST"])
 def predict():
     """Prediksi untuk single input"""
@@ -423,41 +565,47 @@ def predict():
         if not data:
             return jsonify({"error": "No input data provided"}), 400
 
-        # Get model name from request or use best model
-        model_name = data.pop("model_name", None)
+        result = run_prediction(data)  # note: mutates? bright downstream
+        input_processed = result.pop("input_processed", None)
+        effective_model = result["model_used"]
 
-        # Preprocess input
-        input_processed = preprocessor.preprocess_single_input(data)
+        contribution = None
+        if effective_model == "Logistic Regression" and input_processed is not None:
+            contribution = compute_lr_factor_contributions(input_processed, effective_model)
 
-        # Predict
-        prediction = trainer.predict(input_processed, model_name)
-        probabilities = trainer.predict_proba(input_processed, model_name)
+        result["factor_contributions"] = contribution
 
-        # Decode prediction
-        if "Keberhasilan Pengobatan" in preprocessor.label_decoders:
-            prediction_label = preprocessor.decode_value(
-                "Keberhasilan Pengobatan", int(prediction[0])
-            )
-        else:
-            prediction_label = "Berhasil" if prediction[0] == 0 else "Tidak Berhasil"
+        return jsonify(result)
 
-        # Get confidence
-        confidence = float(max(probabilities[0])) * 100
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        return jsonify(
-            {
-                "prediction": prediction_label,
-                "prediction_code": int(prediction[0]),
-                "confidence": confidence,
-                "model_used": model_name if model_name else trainer.best_model_name,
-                "probabilities": {
-                    "Berhasil": float(probabilities[0][0]) * 100,
-                    "Tidak Berhasil": float(probabilities[0][1]) * 100
-                    if len(probabilities[0]) > 1
-                    else 0,
-                },
-            }
-        )
+
+@app.route("/explain", methods=["POST"])
+def explain():
+    """POST — prediksi + attribusi per-fitur (SHAP linear utk Logistic Regression)."""
+    global preprocessor, trainer
+
+    if not is_trained or preprocessor is None or trainer is None:
+        return jsonify({"error": "Models not trained yet"}), 400
+
+    try:
+        data = request.json
+
+        if not data:
+            return jsonify({"error": "No input data provided"}), 400
+
+        result = run_prediction(data)
+        input_processed = result.pop("input_processed", None)
+        effective_model = result["model_name"]
+
+        contribution = None
+        if effective_model == "Logistic Regression" and input_processed is not None:
+            contribution = compute_lr_factor_contributions(input_processed, effective_model)
+
+        result["factor_contributions"] = contribution
+
+        return jsonify(result)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

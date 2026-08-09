@@ -17,8 +17,30 @@ interface Prediction {
     patient_data: Record<string, string>;
 }
 
+interface FactorContribution {
+    feature: string;
+    contribution_logit: number;
+    contribution_raw?: number;
+    coefficient?: number;
+    raw_value?: number;
+    scaled_value?: number;
+    scaled_mean?: number;
+    scaled_std?: number;
+    delta_pp: number;
+}
+
+interface FactorContributions {
+    intercept: number;
+    base_probability: number;
+    probability: number;
+    z_raw?: number;
+    z_final?: number;
+    features: FactorContribution[];
+}
+
 interface Props {
     prediction: Prediction;
+    factorContributions?: FactorContributions | null;
 }
 
 export const decodingMappings: Record<string, Record<string, string>> = {
@@ -45,7 +67,7 @@ export const getDecodedValue = (key: string, value: string): string => {
     return value;
 };
 
-export default function Show({ prediction }: Props) {
+export default function Show({ prediction, factorContributions }: Props) {
     const isSuccess = prediction.prediction_result === 'Berhasil';
 
     // Normalize patient_data keys: convert ML-formatted keys to lowercase form-field keys
@@ -105,33 +127,75 @@ export default function Show({ prediction }: Props) {
         { name: 'Tidak Berhasil', value: prediction.probabilities['Tidak Berhasil'] ?? 0, fill: '#ef4444' },
     ] : [];
 
+    // Peta feature -> delta_pp dari attribusi SHAP (bila tersedia)
+    const factorContribMap = new Map<string, number>();
+    if (factorContributions?.features) {
+        factorContributions.features.forEach(f => { factorContribMap.set(f.feature, f.delta_pp); });
+    }
+    const hasContrib = factorContribMap.size > 0;
+
+    // Helper: format angka teknis untuk tabel perhitungan
+    const fmtNum = (v: number | undefined, digits = 4): string =>
+        v === undefined ? '—' : Number(v.toFixed(digits)).toString();
+    const signedNum = (v: number | undefined, digits = 4): string =>
+        v === undefined ? '0' : `${v >= 0 ? '+' : ''}${Number(v.toFixed(digits)).toString()}`;
+
+    // Nilai fitur sebagai label (decode bila dikenali) + nilai mentah
+    const featValueLabel = (f: FactorContribution): string => {
+        const formKey = mlKeyMap[f.feature] || f.feature.toLowerCase().replace(/\s+/g, '_');
+        const rawNum = Number(f.raw_value);
+        const base = Number.isInteger(rawNum) ? String(Math.round(rawNum)) : String(rawNum);
+        const decoded = getDecodedValue(formKey, String(Math.round(rawNum)));
+        return decoded !== base ? `${decoded} (${base})` : base;
+    };
+
+    // True bila data attribusi lengkap utk tabel angka (dari model terbaru)
+    const hasDetailCalc = hasContrib && factorContributions?.z_final !== undefined;
+
+    // Nilai antara untuk rincian kalkulasi sigmoid
+    const zRaw = factorContributions?.z_raw;
+    const zFinal = factorContributions?.z_final;
+    const expNegZB = zFinal !== undefined ? Math.exp(-zFinal) : 0;
+    const denom = expNegZB > 0 ? 1 + expNegZB : 0;
+    const invDenom = denom > 0 ? 1 / denom : 0;
+
     // Risk factors from patient data
     const getRiskFactors = () => {
-        const risks: string[] = [];
-        if (data.kepatuhan_minum_obat === '1') risks.push('Tidak patuh minum obat');
-        if (data.komorbiditas === '1') risks.push('Memiliki komorbiditas');
-        if (data.riwayat_dm === '1') risks.push('Riwayat diabetes mellitus');
-        if (data.riwayat_hiv === '1') risks.push('Riwayat HIV positif');
-        if (data.efek_samping_obat === '1') risks.push('Mengalami efek samping obat');
-        if (data.status_merokok === '1') risks.push('Merokok');
-        if (data.riwayat_pengobatan === '1') risks.push('Kasus pengobatan lama');
-        if (data.usia === '1') risks.push('Usia lanjut (>45 tahun)');
+        const risks: { label: string; key: string }[] = [];
+        if (data.kepatuhan_minum_obat === '1') risks.push({ label: 'Tidak patuh minum obat', key: 'kepatuhan_minum_obat' });
+        if (data.komorbiditas === '1') risks.push({ label: 'Memiliki komorbiditas', key: 'komorbiditas' });
+        if (data.riwayat_dm === '1') risks.push({ label: 'Riwayat diabetes mellitus', key: 'riwayat_dm' });
+        if (data.riwayat_hiv === '1') risks.push({ label: 'Riwayat HIV positif', key: 'riwayat_hiv' });
+        if (data.efek_samping_obat === '1') risks.push({ label: 'Mengalami efek samping obat', key: 'efek_samping_obat' });
+        if (data.status_merokok === '1') risks.push({ label: 'Merokok', key: 'status_merokok' });
+        if (data.riwayat_pengobatan === '1') risks.push({ label: 'Kasus pengobatan lama', key: 'riwayat_pengobatan' });
+        if (data.usia === '1') risks.push({ label: 'Usia lanjut (>45 tahun)', key: 'usia' });
         return risks;
     };
 
     const getPositiveFactors = () => {
-        const positives: string[] = [];
-        if (data.kepatuhan_minum_obat === '0') positives.push('Patuh minum obat');
-        if (data.komorbiditas === '0') positives.push('Tidak ada komorbiditas');
-        if (data.riwayat_dm === '0') positives.push('Tidak ada riwayat DM');
-        if (data.riwayat_hiv === '0') positives.push('HIV negatif');
-        if (data.efek_samping_obat === '0') positives.push('Tidak ada efek samping obat');
-        if (data.status_merokok === '0') positives.push('Tidak merokok');
+        const positives: { label: string; key: string }[] = [];
+        if (data.kepatuhan_minum_obat === '0') positives.push({ label: 'Patuh minum obat', key: 'kepatuhan_minum_obat' });
+        if (data.komorbiditas === '0') positives.push({ label: 'Tidak ada komorbiditas', key: 'komorbiditas' });
+        if (data.riwayat_dm === '0') positives.push({ label: 'Tidak ada riwayat DM', key: 'riwayat_dm' });
+        if (data.riwayat_hiv === '0') positives.push({ label: 'HIV negatif', key: 'riwayat_hiv' });
+        if (data.efek_samping_obat === '0') positives.push({ label: 'Tidak ada efek samping obat', key: 'efek_samping_obat' });
+        if (data.status_merokok === '0') positives.push({ label: 'Tidak merokok', key: 'status_merokok' });
         return positives;
     };
 
     const riskFactors = getRiskFactors();
     const positiveFactors = getPositiveFactors();
+
+    // Render item faktor
+    const renderFactor = (f: { label: string; key: string }, dotClass: string) => {
+        return (
+            <li className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className={`w-1.5 h-1.5 rounded-full ${dotClass} flex-shrink-0`} />
+                <span>{f.label}</span>
+            </li>
+        );
+    };
 
     return (
         <AppLayout breadcrumbs={[{ label: 'Riwayat', href: '/prediction/history' }, { label: `Detail #${prediction.id}` }]}>
@@ -215,16 +279,95 @@ export default function Show({ prediction }: Props) {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            {hasDetailCalc && factorContributions && (
+                                <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
+                                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                        📐 Rincian Angka Perhitungan (Logistic Regression)
+                                    </h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        Nilai dirumuskan pasien diubah jadi skor standar
+                                        <InlineMath math="z_i = \frac{x_i - \mu_i}{\sigma_i}" />, lalu di jumlah terkali koefisien model
+                                        <InlineMath math="\beta_i" />. Total <InlineMath math="z" /> dipasang ke fungsi sigmoid hingga menjadi persentase.
+                                    </p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
+                                            <thead>
+                                                <tr className="bg-slate-100 dark:bg-slate-800">
+                                                    <th className="border p-2 text-left">Fitur</th>
+                                                    <th className="border p-2 text-left">Nilai (<InlineMath math="x_i" />)</th>
+                                                    <th className="border p-2 text-center">Nilai z</th>
+                                                    <th className="border p-2 text-center">Koefisien (<InlineMath math="\beta" />)</th>
+                                                    <th className="border p-2 text-center"><InlineMath math="\beta \cdot z" /></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {factorContributions.features.map((f) => (
+                                                    <tr key={f.feature} className="odd:bg-slate-50 dark:odd:bg-slate-800/50">
+                                                        <td className="border p-2 text-left font-medium">{f.feature}</td>
+                                                        <td className="border p-2 text-left">{featValueLabel(f)}</td>
+                                                        <td className="border p-2 font-mono">{fmtNum(f.scaled_value)}</td>
+                                                        <td className="border p-2 font-mono">{fmtNum(f.coefficient)}</td>
+                                                        <td className="border p-2 font-mono">{fmtNum(f.contribution_raw)}</td>
+                                                    </tr>
+                                                ))}
+                                                <tr className="bg-slate-100 dark:bg-slate-800 font-semibold">
+                                                    <td className="border p-2" colSpan={4}>
+                                                        Total logit mentah{' '}
+                                                        <InlineMath
+                                                            math={`z = ${fmtNum(factorContributions.intercept)} ${factorContributions.features.map(f => signedNum(f.contribution_raw)).join(' ')}`}
+                                                        />
+                                                    </td>
+                                                    <td className="border p-2 text-center">{fmtNum(factorContributions.z_raw)}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-3">
+                                        <div className="space-y-1">
+                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">① Jumlahkan logit mentah</p>
+                                            <p>
+                                                z = β₀ + Σ(βᵢ·zᵢ) = {fmtNum(factorContributions.intercept)}{factorContributions.features.map(f => signedNum(f.contribution_raw)).join('')}
+                                            </p>
+                                            <p className="pl-1">
+                                                z = {fmtNum(zRaw)}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">② Ubah orientasi ke kelas «Berhasil»</p>
+                                            <p>
+                                                Kelas «Berhasil» berada di sisi negatif logit mentah, sehingga:
+                                            </p>
+                                            <p className="pl-1">
+                                                z<sub>Berhasil</sub> = −z = −({fmtNum(zRaw)}) = {fmtNum(zFinal)}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">③ Fungsi sigmoid → probabilitas</p>
+                                            <p className="pl-1">a) P(Berhasil) = 1 / (1 + e<sup>−z<sub>Berhasil</sub></sup>)</p>
+                                            <p className="pl-1">
+                                                b) e<sup>−z<sub>Berhasil</sub></sup> = e<sup>{fmtNum(zFinal !== undefined ? -zFinal : 0)}</sup> = {fmtNum(expNegZB)}
+                                            </p>
+                                            <p className="pl-1">
+                                                c) P(Berhasil) = 1 / (1 + {fmtNum(expNegZB)}) = 1 / {fmtNum(denom)} ≈ {fmtNum(invDenom)}
+                                            </p>
+                                            <p className="pl-1 font-bold text-green-600">
+                                                d) P(Berhasil) = {factorContributions.probability.toFixed(2)}%
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-slate-400">
+                                        * z = (x−μ)/σ adalah standardisasi; μ &amp; σ diambil dari data latih. Nilai dapat dibulatkan sehingga
+                                        penjumlahan manual bisa sedikit berbeda dari hasil model.
+                                    </p>
+                                </div>
+                            )}
                             {isSuccess ? (
                                 <>
                                     <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-green-200">
                                         <h4 className="font-semibold text-green-700 dark:text-green-400 mb-2">✅ Faktor Pendukung Keberhasilan</h4>
                                         <ul className="space-y-1">
-                                            {positiveFactors.map((f, i) => (
-                                                <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                                                    {f}
-                                                </li>
+                                            {positiveFactors.map(f => (
+                                                renderFactor(f, 'bg-green-500')
                                             ))}
                                         </ul>
                                     </div>
@@ -241,11 +384,8 @@ export default function Show({ prediction }: Props) {
                                         <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-amber-200">
                                             <h4 className="font-semibold text-amber-700 dark:text-amber-400 mb-2">⚠️ Faktor Risiko yang Perlu Diperhatikan</h4>
                                             <ul className="space-y-1">
-                                                {riskFactors.map((f, i) => (
-                                                    <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                                                        {f}
-                                                    </li>
+                                                {riskFactors.map(f => (
+                                                    renderFactor(f, 'bg-amber-500')
                                                 ))}
                                             </ul>
                                         </div>
@@ -257,11 +397,8 @@ export default function Show({ prediction }: Props) {
                                         <h4 className="font-semibold text-red-700 dark:text-red-400 mb-2">⚠️ Faktor Risiko Teridentifikasi</h4>
                                         {riskFactors.length > 0 ? (
                                             <ul className="space-y-1">
-                                                {riskFactors.map((f, i) => (
-                                                    <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                                                        {f}
-                                                    </li>
+                                                {riskFactors.map(f => (
+                                                    renderFactor(f, 'bg-red-500')
                                                 ))}
                                             </ul>
                                         ) : (
@@ -282,11 +419,8 @@ export default function Show({ prediction }: Props) {
                                         <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-green-200">
                                             <h4 className="font-semibold text-green-700 dark:text-green-400 mb-2">✅ Faktor Positif yang Dimiliki</h4>
                                             <ul className="space-y-1">
-                                                {positiveFactors.map((f, i) => (
-                                                    <li key={i} className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                                                        {f}
-                                                    </li>
+                                                {positiveFactors.map(f => (
+                                                    renderFactor(f, 'bg-green-500')
                                                 ))}
                                             </ul>
                                         </div>
@@ -433,6 +567,27 @@ export default function Show({ prediction }: Props) {
                                                 <BlockMath math="\hat{y} = \begin{cases} \text{Berhasil} & \text{jika } P(Y=1|X) \geq 0.5 \\ \text{Tidak Berhasil} & \text{jika } P(Y=1|X) < 0.5 \end{cases}" />
                                             </div>
                                         </div>
+
+                                        {hasDetailCalc && factorContributions && (
+                                            <div className="space-y-3">
+                                                <p className="font-medium">d) Substitusi dengan angka pasien ini:</p>
+                                                <p className="text-xs text-gray-500">
+                                                    Nilai tiap fitur di-standarisasi (z-skor) lalu dikali koefisien model. Kelas
+                                                    «Berhasil» berada di sisi negatif logit, sehingga probabilitasnya dihitung
+                                                    dari −z.
+                                                </p>
+                                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto font-mono text-sm">
+                                                    <BlockMath
+                                                        math={`z = ${fmtNum(factorContributions.intercept)} ${factorContributions.features.map(f => signedNum(f.contribution_raw)).join(' ')} = ${fmtNum(factorContributions.z_raw)}`}
+                                                    />
+                                                </div>
+                                                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto font-mono text-sm">
+                                                    <BlockMath
+                                                        math={`P(\\text{Berhasil}) = \\frac{1}{1+e^{${fmtNum(factorContributions.z_final)}}} = ${(factorContributions.probability / 100).toFixed(4)} = ${factorContributions.probability.toFixed(1)}\\%`}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {prediction.probabilities && (
                                             <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">

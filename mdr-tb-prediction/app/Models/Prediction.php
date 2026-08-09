@@ -18,11 +18,13 @@ class Prediction extends Model
         'model_used',
         'confidence_score',
         'probabilities',
+        'factor_contributions',
     ];
 
     protected $casts = [
         'patient_data' => 'array',
         'probabilities' => 'array',
+        'factor_contributions' => 'array',
         'confidence_score' => 'float',
     ];
 

@@ -119,6 +119,7 @@ class PredictionController extends Controller
                     'model_used' => $result['model_used'],
                     'confidence_score' => $result['confidence'],
                     'probabilities' => $result['probabilities'] ?? null,
+                    'factor_contributions' => $result['factor_contributions'] ?? null,
                 ]);
 
                 return Inertia::render('Prediction/Result', [
@@ -264,11 +265,70 @@ class PredictionController extends Controller
     /**
      * Detail prediksi
      */
+    /**
+     * Tampilkan detail prediksi. Attribusi per-fitur (SHAP) difetch on-demand
+     * dari ML service /explain agar prediksi lama (tanpa tersimpan) tetap dapat angka.
+     */
     public function show(Prediction $prediction)
     {
+        $factorContributions = $prediction->factor_contributions;
+
+        // Prediksi tanpa attribusi tersimpan ATAU data attribusi versi lama (tanpa
+        // detail angka z/koefisien) -> hitung ulang via /explain agar tabel angka
+        // perhitungan (Opsi 1) tetap tampil lengkap.
+        $needsRefresh = empty($factorContributions) ||
+            !isset($factorContributions['z_final']) ||
+            (isset($factorContributions['features'][0]) && !isset($factorContributions['features'][0]['scaled_value']));
+        if ($needsRefresh && $prediction->model_used === 'Logistic Regression') {
+            try {
+                $response = Http::post(
+                    "{$this->mlServiceUrl}/explain",
+                    $this->buildMlInput($prediction->patient_data)
+                );
+                if ($response->successful()) {
+                    $factorContributions = $response->json()['factor_contributions'] ?? null;
+                }
+            } catch (\Exception $e) {
+                $factorContributions = null;
+            }
+        }
+
         return Inertia::render('Prediction/Show', [
             'prediction' => $prediction,
+            'factorContributions' => $factorContributions,
         ]);
+    }
+
+    /**
+     * Mapping data form/patient ke kunci yang dimengerti ML service.
+     */
+    private function buildMlInput(array $data): array
+    {
+        $mlInput = [
+            'Usia' => $data['usia'] ?? '',
+            'Ket.Usia' => (int)($data['ket_usia'] ?? 0),
+            'Jenis Kelamin' => $data['jenis_kelamin'] ?? '',
+            'Status Bekerja' => $data['status_bekerja'] ?? '',
+            'BB' => (float)($data['bb'] ?? 0),
+            'TB' => (float)($data['tb'] ?? 0),
+            'IMT' => (float)($data['imt'] ?? 0),
+            'Status Gizi' => $data['status_gizi'] ?? '',
+            'Status Merokok' => $data['status_merokok'] ?? '',
+            'Pemeriksaan Kontak' => $data['pemeriksaan_kontak'] ?? '',
+            'Riwayat_DM' => $data['riwayat_dm'] ?? '',
+            'Riwayat_HIV' => $data['riwayat_hiv'] ?? '',
+            'Komorbiditas' => $data['komorbiditas'] ?? '',
+            'Kepatuhan Minum Obat' => $data['kepatuhan_minum_obat'] ?? '',
+            'Efek Samping Obat' => $data['efek_samping_obat'] ?? '',
+            'Riwayat Pengobatan Sebelumnya' => $data['riwayat_pengobatan'] ?? '',
+            'Panduan Pengobatan' => $data['panduan_pengobatan'] ?? '',
+        ];
+
+        if (!empty($data['model_name']) && $data['model_name'] !== 'auto') {
+            $mlInput['model_name'] = $data['model_name'];
+        }
+
+        return $mlInput;
     }
 
     /**
