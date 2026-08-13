@@ -29,6 +29,20 @@ from src.interpretability import get_all_interpretability, get_class_distributio
 from src.preprocessing import DataPreprocessor
 from src.training import ModelTrainer
 
+try:
+    from src.external_validation import run_external_validation
+    from src.dca import run_dca
+    from src.shap_exact import exact_shap_svm, _background_sample, SHAP_BACKGROUND_NAME
+    EXTERNAL_VALIDATION_AVAILABLE = True
+except Exception as e:
+    print(f"External validation/DCA modules not available: {e}")
+    EXTERNAL_VALIDATION_AVAILABLE = False
+    run_external_validation = None
+    run_dca = None
+    exact_shap_svm = None
+    _background_sample = None
+    SHAP_BACKGROUND_NAME = None
+
 app = Flask(__name__)
 CORS(app)
 
@@ -637,6 +651,47 @@ def compute_svm_calculation(
         top.sort(key=lambda t: -abs(t["contribution"]))
         top = top[:5]
 
+        # --- Atribusi SHAP exact per-fitur (KernelExplainer-equivalent) ---
+        # Background: 50 sampel acak dari data latih bersih (diberi nama, seed=42).
+        shap_features = None
+        shap_base = None
+        shap_method = None
+        shap_background = None
+        try:
+            if exact_shap_svm is not None:
+                from src.shap_exact import build_background_from_training_file
+                bg = None
+                if build_background_from_training_file is not None:
+                    bg = build_background_from_training_file(
+                        preprocessor, scaler, list(input_processed.columns)
+                    )
+                if bg is None or len(bg) < 2:
+                    raise RuntimeError("background dataset unavailable")
+                res = exact_shap_svm(
+                    scaler=scaler, clf=clf, X_test=X_scaled, background=bg,
+                    feature_names=list(input_processed.columns),
+                    positive_class=0,  # P(Berhasil) — konsisten dgn probability di UI
+                )
+                if res and res.get("values"):
+                    vals = res["values"][0]
+                    shap_features = [
+                        {
+                            "feature": name,
+                            "shap_value": float(v),
+                            "shap_mean_abs": float(abs(v)),
+                            "raw_value": float(input_processed.iloc[0][name]),
+                            "scaled_value": float(x0[i]),
+                        }
+                        for i, (name, v) in enumerate(zip(list(input_processed.columns), vals))
+                    ]
+                    shap_features.sort(key=lambda r: -r["shap_mean_abs"])
+                    shap_base = res.get("base_value")
+                    shap_method = res.get("method")
+                    shap_background = res.get("background")
+        except Exception as e:
+            print(f"Error computing SVM SHAP attribution: {e}")
+            shap_features = None
+
         return {
             "type": "svm",
             "model": "Support Vector Machine",
@@ -648,6 +703,12 @@ def compute_svm_calculation(
             "B": B,
             "probability": round(probability, 4),
             "top_sv": top,
+            "shap": {
+                "method": shap_method,
+                "background": shap_background,
+                "base_value": shap_base,
+                "features": shap_features,
+            } if shap_features is not None else None,
         }
     except Exception as e:
         print(f"Error computing SVM calculation: {e}")
@@ -855,6 +916,77 @@ def get_interpretability():
         return jsonify({"error": "Models not evaluated yet"}), 400
 
     return jsonify(interpretability_data)
+
+
+# Cache untuk external validation & DCA (dihitung sekali, tidak menyentuh model produksi)
+_external_validation_cache = None
+_external_validation_computing = False
+_dca_cache = None
+_dca_computing = False
+
+
+def _json_safe(obj):
+    """Ganti nilai Infinity/NaN/-Infinity dengan None (JSON murni tidak mengizinkannya,
+    dan json_decode PHP/Node menolak). Juga konversi numpy scalar ke float/int."""
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, (np.floating,)):
+        obj = float(obj)
+    elif isinstance(obj, (np.integer,)):
+        obj = int(obj)
+    if isinstance(obj, float):
+        return None if not np.isfinite(obj) else obj
+    return obj
+
+
+@app.route("/external-validation", methods=["GET"])
+def external_validation():
+    """External validation menggunakan kohort Gowa (Register TBC.03)."""
+    global _external_validation_cache, _external_validation_computing
+    if not EXTERNAL_VALIDATION_AVAILABLE or run_external_validation is None:
+        return jsonify({"error": "External validation module tidak tersedia"}), 500
+    if _external_validation_cache is not None:
+        return jsonify(_external_validation_cache)
+    if _external_validation_computing:
+        return jsonify({"error": "External validation sedang dihitung, coba lagi nanti"}), 503
+    _external_validation_computing = True
+    try:
+        result = run_external_validation(verbose=True)
+        result = _json_safe(result)
+        _external_validation_cache = result
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+    finally:
+        _external_validation_computing = False
+
+
+@app.route("/dca", methods=["GET"])
+def dca_endpoint():
+    """Decision Curve Analysis (DCA) + kontribusi per variabel (SVM)."""
+    global _dca_cache, _dca_computing
+    if not EXTERNAL_VALIDATION_AVAILABLE or run_dca is None:
+        return jsonify({"error": "DCA module tidak tersedia"}), 500
+    if _dca_cache is not None:
+        return jsonify(_dca_cache)
+    if _dca_computing:
+        return jsonify({"error": "DCA sedang dihitung, coba lagi nanti"}), 503
+    _dca_computing = True
+    try:
+        result = run_dca(verbose=True)
+        result = _json_safe(result)
+        _dca_cache = result
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+    finally:
+        _dca_computing = False
 
 
 @app.route("/compare-smote", methods=["POST"])

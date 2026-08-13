@@ -14,6 +14,12 @@ from sklearn.inspection import permutation_importance
 from scipy import stats
 from typing import Dict, List, Any, Optional
 
+try:
+    from shap_exact import exact_shap_svm, _background_sample, SHAP_BACKGROUND_NAME
+except ImportError:
+    # notebook flat-import path
+    from shap_exact import exact_shap_svm, _background_sample, SHAP_BACKGROUND_NAME
+
 
 def _firth_lookup_for_lr(
     feature_names: List[str],
@@ -151,20 +157,42 @@ def get_shap_values(
                 "values": None,
             }
 
-        # SVC dan lainnya → permutation fallback
-        perm = get_permutation_importance_data(
-            model, X, y, feature_names, n_repeats=n_repeats, random_state=random_state
-        )
-        features = [
-            {"feature": r["feature"], "shap_mean_abs": float(r["importance_mean"])}
-            for r in perm
-        ]
-        features.sort(key=lambda r: r["shap_mean_abs"], reverse=True)
-        return {
-            "method": "permutation_fallback",
-            "features": features,
-            "values": None,
-        }
+        # SVC (RBF) dan lainnya → exact Kernel SHAP (Shapley values eksak).
+        # Package shap butuh numba (tak kompatibel Python 3.14); kita hitung
+        # native dgn 2^M koalisi — identik dengan KernelExplainer.
+        try:
+            X_scaled = scaler.transform(X.values) if scaler else X.values
+            bg = _background_sample(X_scaled)
+            result = exact_shap_svm(
+                scaler=scaler,
+                clf=classifier,
+                X_test=X_scaled,
+                background=bg,
+                feature_names=feature_names,
+            )
+            return {
+                "method": "kernel_exact",
+                "background": result["background"],
+                "base_value": result["base_value"],
+                "features": result["features"],
+                "values": result["values"],
+            }
+        except Exception as e:
+            print(f"Error computing exact SHAP for {cls_name}: {e}")
+            # Fallback: permutation
+            perm = get_permutation_importance_data(
+                model, X, y, feature_names, n_repeats=n_repeats, random_state=random_state
+            )
+            features = [
+                {"feature": r["feature"], "shap_mean_abs": float(r["importance_mean"])}
+                for r in perm
+            ]
+            features.sort(key=lambda r: r["shap_mean_abs"], reverse=True)
+            return {
+                "method": "permutation_fallback",
+                "features": features,
+                "values": None,
+            }
 
     except Exception as e:
         print(f"Error computing SHAP values: {e}")
@@ -228,12 +256,15 @@ def get_permutation_importance_data(model, X: pd.DataFrame, y: pd.Series,
             scoring='f1'
         )
 
+        imp_mean = np.asarray(result['importances_mean'])
+        imp_std = np.asarray(result['importances_std'])
+
         results = []
         for i, name in enumerate(feature_names):
             results.append({
                 'feature': name,
-                'importance_mean': float(result.importances_mean[i]),
-                'importance_std': float(result.importances_std[i])
+                'importance_mean': float(imp_mean[i]),
+                'importance_std': float(imp_std[i])
             })
 
         results.sort(key=lambda x: x['importance_mean'], reverse=True)
