@@ -7,3 +7,14 @@ index.html
 disertasi_meiyanti-pengembangan-pembelajaran-mesin-untuk-prediksi-keberhasilan-pengobatan-tuberkulosis-pada-populasi-usia-produktif-di-indonesia.pdf
 Proposal Disertasi .pdf
 Untitled0.ipynb
+*.ipynb_checkpoints
+.ipynb_checkpoints/
+*_checkpoint.ipynb
+* checkpoint*.ipynb
+"* copy.ipynb"
+logs/
+__pycache__/
+*.pyc
+.DS_Store
+.sisyphus/
+.playwright-mcp/
