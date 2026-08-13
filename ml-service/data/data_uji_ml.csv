@@ -1,0 +1,176 @@
+Usia,Ket.Usia,Jenis Kelamin,Status Bekerja,BB,TB,IMT,Status Gizi,Status Merokok,Pemeriksaan Kontak,Riwayat_DM,Riwayat_HIV,Komorbiditas,Kepatuhan Minum Obat,Efek Samping Obat,Efek_Samping_Obat,Riwayat Pengobatan Sebelumnya,Panduan Pengobatan,Keberhasilan Pengobatan
+Usia Produktif,48,Perempuan,Tidak Bekerja,47,156,20.5,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Muntah ringan, nafsu makan berkurang, alergi kulit ringan, nyeri dada,",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,20,Perempuan,Bekerja,49,149,22.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,45,Perempuan,Tidak Bekerja,50,158,33.5,Gizi Lebih,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,68,Laki-Laki,Bekerja,65,166,23.6,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,35,Laki-Laki,Tidak Bekerja,51,152,22.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Nyeri Sendi, Nyeri Kepala",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,24,Laki-Laki,Tidak Bekerja,67,160,26.0,Gizi Lebih,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,39,Laki-Laki,Bekerja,50,165,18.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,32,Laki-Laki,Tidak Bekerja,55,165,20.0,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,35,Laki-Laki,Bekerja,48,160,18.7,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,30,Laki-Laki,Tidak Bekerja,50,174,16.4,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,45,Perempuan,Tidak Bekerja,55,170,19.0,Gizi Normal,Tidak Merokok,Ya,Ada,Tidak,Ada,Patuh,Ada Keluhan,Nafsu makan berkurang,Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,48,Perempuan,Tidak Bekerja,50,150,22.2,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Muntah ringan, Gangguan tidur",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,19,Laki-Laki,Tidak Bekerja,45,159,17.8,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,50,Laki-Laki,Tidak Bekerja,56,180,17.3,Gizi Kurang,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,37,Perempuan,Tidak Bekerja,38,157,15.4,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Gangguan tidur",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,38,Laki-Laki,Tidak Bekerja,48,168,17.0,Gizi Kurang,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,30,Perempuan,Tidak Bekerja,48,155,20.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Diare, Mual, Dispepsia akut, Muntah ringan, Nafsu makan berkurang, Perut kembung, Gangguan tidur, Halusinasi,Vertigo, sesak nafas, lidah menghitam, cemas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,35,Perempuan,Tidak Bekerja,40,158,16.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,29,Laki-Laki,Tidak Bekerja,48,162,18.3,Gizi Kurang,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,68,Laki-Laki,Tidak Bekerja,52,165,16.5,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Muntah ringan, Gangguan tidur",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,36,Perempuan,Tidak Bekerja,46,167,16.5,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, Kesemutan pada kaki",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,57,Laki-Laki,Bekerja,45,156,18.5,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Muntah ringan, nafsu makan berkurang, alergi kulit ringan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,60,Perempuan,Tidak Bekerja,45,155,18.7,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak Ada Keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,63,Perempuan,Tidak Bekerja,43,155,17.9,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, nafsu makan berkurang, gangguan tidur, pusing",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,45,Laki-Laki,Bekerja,48,175,15.7,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Muntah ringan, mual",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,26,Laki-Laki,Tidak Bekerja,48,176,15.5,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Muntah ringan, Mual",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,58,Laki-Laki,Bekerja,51,166,18.5,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Lemas, hemoptoe",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,70,Perempuan,Tidak Bekerja,43,151,18.9,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,67,Perempuan,Tidak Bekerja,54,156,22.2,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Alergi kulit, Kesemutan, sesak nafas, nyeri dada",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,19,Perempuan,Bekerja,37,150,16.4,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Muntah ringan, gangguan tidur",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,24,Perempuan,Bekerja,44,156,18.1,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, nafsu makan berkurang, pusing",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,47,Perempuan,Tidak Bekerja,59,155,24.6,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,23,Perempuan,Bekerja,31,152,13.4,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Mual,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,16,Perempuan,Bekerja,52,179,16.2,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,Benjolan dileher,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,20,Laki-Laki,Tidak Bekerja,45,170,15.6,Gizi Kurang,Merokok,Tidak,Tidak,Ada,Ada,Patuh,Ada Keluhan,"Diare, Mual, Muntah ringan, nafsu makan berkurang, Nyeri perut -sedang, gangguan tidur, jantung berdebar, nyeri dada, nyeri berat, sesak nafas, lemas",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,28,Perempuan,Tidak Bekerja,45,152,19.5,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,56,Laki-Laki,Bekerja,43,162,16.4,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,37,Laki-Laki,Bekerja,35,150,15.6,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,Lidah terasa tebal,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,38,Perempuan,Tidak Bekerja,45,165,16.5,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,27,Laki-Laki,Bekerja,51,155,21.2,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,41,Perempuan,Tidak Bekerja,69,170,23.9,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, Gangguan tidur, Kesemutan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,45,Perempuan,Tidak Bekerja,36,156,14.8,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,31,Perempuan,Bekerja,40,165,14.7,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,43,Laki-Laki,Tidak Bekerja,45,170,15.6,Gizi Kurang,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"mual, jantung berdebar",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,52,Perempuan,Tidak Bekerja,30,150,13.3,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"mual, ganguan tidur, badan lemas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,45,Laki-Laki,Bekerja,41,170,14.2,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,Gangguan tidur. Alergi kulit,Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,48,Laki-Laki,Bekerja,48,160,18.7,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, nafsu makan berkurang, nyeri perut sedang, depresi, gangguan tidur, kebas, nyeri dada, gangguan penglihatan, nyeri kepala",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,43,Laki-Laki,Bekerja,77,168,16.3,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, kemerahan pada sendi",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,41,Laki-Laki,Tidak Bekerja,46,170,15.9,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,Mual,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,20,Perempuan,Tidak Bekerja,37,157,15.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Pemanjangan QTc, lemas, demam, penghlihatan berkunang-kunang",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,64,Laki-Laki,Tidak Bekerja,49,169,17.2,Gizi Kurang,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, nyeri perut sedang,, gangguan tidur, nyeri sendi, kesemutan, gangguan elektrolit, sesak, berkunang",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,15,Laki-Laki,Bekerja,47,160,18.4,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Alergi kulit sedang, sesak nafas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,63,Perempuan,Tidak Bekerja,44,150,19.6,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, nafsu makan berkurang,batuk, lemas, sesak nafas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,24,Perempuan,Bekerja,45,165,16.5,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, mutah berat, nafsu makan berkurang, nyeri perut ringan-sedang, kesemutan, batuk, lemas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,18,Laki-Laki,Bekerja,44,160,17.2,Gizi Kurang,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,Mual,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,44,Laki-Laki,Bekerja,60,161,23.1,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, Nyeri perut sedang, nyeri sendi, gangguan penglihatan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,43,Perempuan,Tidak Bekerja,50,155,20.8,Gizi Normal,Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, Muntah ringan, Gangguan tidur, nafsu makan berkurang, Pemanjangan QTc, jantung beredar, nyeri dada, anemia, bengkak pada 2 kaki",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,51,Laki-Laki,Tidak Bekerja,36,150,16.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, nafsu makan berkurang, kesemutan, neuroritis optik, sesak nafas",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,51,Laki-Laki,Tidak Bekerja,61,163,23.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, perut kembung, gangguan tidur, nyeri sendi, demam",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,52,Laki-Laki,Tidak Bekerja,56,157,22.7,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, batuk bedahak, gangguan penglihatan, sesak nafas, pusing",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,42,Laki-Laki,Tidak Bekerja,43,158,17.0,Gizi Kurang,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Nafsu makan berkurang, sesak nafas, badan lemas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,28,Perempuan,Tidak Bekerja,47,158,19.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"mual, batuk bedahak, kram seluruh badan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,55,Perempuan,Tidak Bekerja,46,158,18.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"mual, muntah ringan, nafsu makan berkurang, perut kembung, depresi, kesemutan, gangguan penglihatan, vertigo, sendawa",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,21,Laki-Laki,Tidak Bekerja,49,163,18.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, kesemutan, jantung berdebar",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,62,Laki-Laki,Bekerja,46,158,18.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, nafsu makan berkurang, Gangguan tidur, Pemanjaan QTc, gangguan hati, gangguan gula darah",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,38,Laki-Laki,Tidak Bekerja,74,175,24.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, gangguan tidur, sesak nafas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,20,Laki-Laki,Bekerja,42,172,14.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, nafsu makan berkurang, depresi, gangguan tidur, Pemanjangan QTc, nyeri dada, neurotis optik, gangguan penglihatan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,55,Laki-Laki,Tidak Bekerja,61,171,21.0,Gizi Normal,Tidak Merokok,Ya,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, depresi, kesemutan, badan lemas, nyeri pinggang",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,52,Perempuan,Tidak Bekerja,42,153,18.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, pnafas sedang-berat, nafsu makan berkurang, nyeri perut, gangguan tidur, reaksi alergi kulit ringan, nyeri sendi, kesemutan, jantung berdebar, nyeri dada, gangguan penglihatan, nyeri kepala, vertigo",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,50,Laki-Laki,Bekerja,57,174,19.0,Gizi Normal,Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, nafsu makan berkurang, sesak nafas, batuk berlendir",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,23,Laki-Laki,Tidak Bekerja,56,174,19.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, kesemutan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,65,Perempuan,Bekerja,42,150,19.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, nyeri pada pergelangan kaki, nyeri kepala",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,30,Perempuan,Bekerja,60,160,23.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, nafsu makan berkurang, nyeri pergelangaan kaki, kesemutan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,39,Laki-Laki,Tidak Bekerja,65,172,22.0,Gizi Normal,Merokok,Tidak,Tidak,Ada,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, muntah ringan, nyeri sendi, gangguan hati",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,52,Perempuan,Tidak Bekerja,39,142,19.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, nafsu makan berkurang, gangguan tidur, nyeri sendi, nyeri kepala, anemia, batuk berlendir",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,43,Perempuan,Tidak Bekerja,55,150,24.0,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, perut kembung, depresi, gangguan tidur, reaksi alergi kulit ringan, nyeri sendi, nyeri kepala, kelelahan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,37,Perempuan,Tidak Bekerja,48,163,18.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, perut kembung, gangguan tidur",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,26,Perempuan,Tidak Bekerja,50,169,18.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, nafsu makan berkurang",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,45,Laki-Laki,Bekerja,47,161,18.0,Gizi Kurang,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah sedang-berat, dehidrasi, nafsu makan berkurang, perut kembung, gangguan tidur, reaksi alergi kulit, nyeri sendi, kesemutan, gangguan hati, anemia",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,22,Perempuan,Tidak Bekerja,48,175,16.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,24,Perempuan,Tidak Bekerja,43,157,17.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, nafsu makan berkurang, anemia",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,14,Laki-Laki,Bekerja,48,141,24.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"nafsu makan berkurang, perubahan warna kulit, pemanjangan QTc, jantung berdebar, anemia, sesak",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,19,Perempuan,Tidak Bekerja,45,160,18.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, nafsu makan berkurang, perubahan warna kulit, gangguan sendi, nyeri sendi, kesemutan, nyeri dada",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,64,Laki-Laki,Bekerja,48,155,20.0,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Diare, Dispesia akut, munta ringan, gangguan tidur, gangguan sendi, anemia, Gout",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,38,Laki-Laki,Tidak Bekerja,48,172,16.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Ada,Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,28,Perempuan,Bekerja,48,160,19.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, nafsu makan berkurang, depresi, gangguan tidur, reaksi alergi kulit ringan, kesemutan, pemanjangan QTc, jantung berdebar, gangguan hati, gangguan elektrolit",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,54,Laki-Laki,Bekerja,54,165,20.0,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, perut kembung, gangguan tidur, batuk berlendir",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,58,Laki-Laki,Tidak Bekerja,51,167,18.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Reaksi alergi kulit ringan, kesemutan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,34,Perempuan,Bekerja,56,158,22.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, Mual, Gangguan tidur, Gangguan sendi, gangguan hati, gangguan penglihatan, nyeri kepala",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,17,Laki-Laki,Tidak Bekerja,45,170,16.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, nafsu makan berkurang, perut kembung, gangguan hati",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,48,Laki-Laki,Tidak Bekerja,56,165,21.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Ada,Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, nafsu makan berkurang, perut kembung, gangguan tidur",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,63,Laki-Laki,Tidak Bekerja,51,154,22.0,Gizi Normal,Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, reaksi kulit ringan, kesemutan, jantung berdebar, nyeri kepala, anemia, batuk berlendir, lemas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,28,Perempuan,Tidak Bekerja,53,163,20.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, nafsu makan berkurang, kesemutan, jantung berdebar, gangguan hati",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,35,Laki-Laki,Bekerja,34,169,12.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, muntah ringan, muntah sedang, kesemutan, perpanjangan QTc, jantung berdebar, gangguan hati, gangguan elektrolik, sesak, batuk berlendir",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,42,Laki-Laki,Tidak Bekerja,39,170,14.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, nafsu makan berkurang, nyeri sendi, kesemutan, pusing",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,23,Perempuan,Tidak Bekerja,32,154,14.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, perpanjangan QTc, jantung berdebar, sesak",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,44,Laki-Laki,Bekerja,68,165,25.0,Gizi Lebih,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, bengkak pada sendi, hepatotoksis, anemia, gangguan elektrolit",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,44,Laki-Laki,Bekerja,53,160,21.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,"muntah sedang-berat, reaksi alergi kulit, nyeri dada, anemia, gangguan elektrolit",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,49,Perempuan,Tidak Bekerja,32,145,15.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Ada,Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, gangguan tidur, tebas kesemutan, gangguan penglihatan, nyeri kepala, anemia, sesak nafas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,69,Laki-Laki,Bekerja,35,149,16.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, perut kembung, kesemutan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,37,Perempuan,Tidak Bekerja,59,160,23.0,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, gangguan penglihatan, rasa kelelahan, lemas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,77,Perempuan,Tidak Bekerja,30,142,15.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"muntah ringan, nafsu makan berkurang, gangguan hati",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,31,Perempuan,Tidak Bekerja,36,155,15.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, kesemutan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,36,Laki-Laki,Bekerja,40,160,16.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, gangguan tidur, kesemutan",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,53,Laki-Laki,Bekerja,68,168,24.0,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, ganguan sendi, artitis, anemia, gangguan aletrolik, lemas",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,43,Perempuan,Tidak Bekerja,47,150,21.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, muntah ringan, gangguan tidur, kesemutan, gangguan hati, nyeri kepala, anemia, gangguan elektrolik",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,15,Laki-Laki,Bekerja,48,158,19.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"mual, nafsu makan berkurang, gangguan hati, batuk",Kasus Baru,Jangka Panjang,Berhasil
+Usia Lanjut,52,Laki-Laki,Bekerja,64,172,22.0,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,"Mual, kesemutan, batuk",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,32,Laki-Laki,Bekerja,49,165,18.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Dispesia akut, mual, nafsu makan berkurang, perubahan warna kulit, reaksi alergi kulit, nyeri sendi, batuk berlendir",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,30,Laki-Laki,Bekerja,45,160,18.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,Mual,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,17,Laki-Laki,Tidak Bekerja,50,157,20.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,24,Perempuan,Bekerja,50,156,21.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, muntah ringan, perubahan warna kulit, nyeri kepala",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,17,Perempuan,Bekerja,46,155,19.0,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Perubahan warna kulit, sesak nafas",Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,28,Perempuan,Tidak Bekerja,50,155,21.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,49,Perempuan,Tidak Bekerja,40,158,16.0,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,"Mual, nafsu makan berkurang, nyeri pergelangan kaki",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,36,Laki-Laki,Tidak Bekerja,87,164,32.0,Gizi Lebih,Tidak Merokok,Ya,Ada,Tidak,Ada,Patuh,Ada Keluhan,"perut kembung,",Kasus Lama,Jangka Pendek,Berhasil
+Usia Lanjut,61,Laki-Laki,Tidak Bekerja,60,171,21.0,Gizi Normal,Tidak Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,"Mual, Muntah ringan, nafsu makan berkurang, alergi kulit ringan",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,41,Perempuan,Bekerja,35,143,17.0,Gizi Kurang,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,38,Perempuan,Tidak Bekerja,35,158,14.0,Gizi Kurang,Tidak Merokok,Ya,Ada,Tidak,Ada,Patuh,Ada Keluhan,"nyeri perut ringan-sedang, gangguan tidur, perubahan warna kulit, nyeri pada pergelangan kaki",Kasus Baru,Jangka Pendek,Berhasil
+Usia Produktif,28,Laki-Laki,Bekerja,45,150,20.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Lama,Jangka Pendek,Berhasil
+Usia Produktif,35,Laki-Laki,Tidak Bekerja,66,170,21.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,Tidak ada keluhan,Kasus Baru,Jangka Pendek,Berhasil
+Usia Lanjut,47,Perempuan,Tidak Bekerja,47,156,20.5,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,13,Perempuan,Bekerja,49,149,22.0,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,30,Laki-Laki,Bekerja,50,158,33.5,Gizi Lebih,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,31,Laki-Laki,Bekerja,65,166,23.6,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,45,Laki-Laki,Tidak Bekerja,51,152,22.0,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Baru,Jangka Pendek,Tidak Berhasil
+Usia Produktif,23,Perempuan,Tidak Bekerja,67,160,26.0,Gizi Lebih,Tidak Merokok,Ya,Tidak,Ada,Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,55,Laki-Laki,Tidak Bekerja,50,165,18.0,Gizi Kurang,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,57,Perempuan,Tidak Bekerja,55,165,20.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,61,Laki-Laki,Tidak Bekerja,48,160,18.7,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,65,Laki-Laki,Bekerja,50,174,16.4,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,67,Laki-Laki,Bekerja,55,170,19.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Produktif,24,Laki-Laki,Tidak Bekerja,50,150,22.2,Gizi Normal,Tidak Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,47,Laki-Laki,Tidak Bekerja,45,159,17.8,Gizi Kurang,Tidak Merokok,Tidak,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,46,Perempuan,Bekerja,56,180,17.3,Gizi Kurang,Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,15,Perempuan,Bekerja,50,150,22.2,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,27,Perempuan,Tidak Bekerja,45,159,17.8,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,50,Perempuan,Tidak Bekerja,56,180,17.3,Gizi Kurang,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,38,Perempuan,Tidak Bekerja,38,157,15.4,Gizi Kurang,Tidak Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,46,Laki-Laki,Bekerja,48,168,17.0,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,47,Laki-Laki,Bekerja,48,155,20.0,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Produktif,44,Perempuan,Tidak Bekerja,40,158,16.0,Gizi Kurang,Tidak Merokok,Ya,Ada,Tidak,Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,37,Perempuan,Tidak Bekerja,48,162,18.3,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,47,Perempuan,Tidak Bekerja,59,160,23.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,40,Perempuan,Tidak Bekerja,30,142,15.0,Gizi Kurang,Tidak Merokok,Tidak,Ada,Tidak,Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,53,Laki-Laki,Bekerja,36,155,15.0,Gizi Kurang,Merokok,Ya,Ada,Tidak,Ada,Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Produktif,43,Laki-Laki,Bekerja,40,160,16.0,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,34,Perempuan,Tidak Bekerja,68,168,24.0,Gizi Normal,Tidak Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,72,Laki-Laki,Bekerja,47,150,21.0,Gizi Normal,Merokok,Tidak,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,65,Laki-Laki,Bekerja,48,158,19.0,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,24,Perempuan,Tidak Bekerja,64,172,22.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,15,Perempuan,Bekerja,49,165,18.0,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,65,Perempuan,Tidak Bekerja,45,160,18.0,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,51,Perempuan,Tidak Bekerja,50,157,20.0,Gizi Normal,Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,59,Perempuan,Tidak Bekerja,50,156,21.0,Gizi Normal,Merokok,Tidak,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,50,Laki-Laki,Tidak Bekerja,46,155,19.0,Gizi Normal,Tidak Merokok,Ya,Ada,Tidak,Ada,Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,50,Laki-Laki,Tidak Bekerja,50,155,21.0,Gizi Normal,Tidak Merokok,Tidak,Ada,Tidak,Ada,Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,65,Laki-Laki,Bekerja,47,150,21.0,Gizi Normal,Merokok,Ya,Ada,Tidak,Ada,Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,52,Laki-Laki,Tidak Bekerja,48,158,19.0,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,33,Perempuan,Tidak Bekerja,64,172,22.0,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,66,Laki-Laki,Tidak Bekerja,49,165,18.0,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,60,Perempuan,Tidak Bekerja,45,160,18.0,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,63,Laki-Laki,Bekerja,50,157,20.0,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Produktif,34,Laki-Laki,Bekerja,50,156,21.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Ada,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,58,Perempuan,Tidak Bekerja,46,155,19.0,Gizi Normal,Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Lanjut,57,Laki-Laki,Bekerja,50,155,21.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,40,Perempuan,Tidak Bekerja,40,158,16.0,Gizi Kurang,Merokok,Tidak,Ada,Tidak,Ada,Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,29,Laki-Laki,Bekerja,87,164,32.0,Gizi Lebih,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Produktif,31,Perempuan,Tidak Bekerja,60,171,21.0,Gizi Normal,Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,30,Perempuan,Tidak Bekerja,35,143,17.0,Gizi Kurang,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,68,Laki-Laki,Bekerja,35,158,14.0,Gizi Kurang,Merokok,Ya,Ada,Tidak,Ada,Tidak Patuh,Tidak Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,30,Laki-Laki,Bekerja,45,150,20.0,Gizi Normal,Tidak Merokok,Ya,Tidak,Ada,Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Lanjut,53,Perempuan,Tidak Bekerja,66,170,21.0,Gizi Normal,Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Pendek,Tidak Berhasil
+Usia Produktif,27,Perempuan,Bekerja,50,150,22.2,Gizi Normal,Merokok,Tidak,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil
+Usia Produktif,42,Laki-Laki,Bekerja,45,159,17.8,Gizi Kurang,Tidak Merokok,Ya,Tidak,Tidak,Tidak Ada,Tidak Patuh,Ada Keluhan,,Kasus Lama,Jangka Panjang,Tidak Berhasil

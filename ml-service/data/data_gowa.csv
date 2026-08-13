@@ -1,0 +1,69 @@
+Ket.Usia,Pemeriksaan Kontak,Riwayat_DM,Riwayat Pengobatan Sebelumnya,Panduan Pengobatan,Keberhasilan Pengobatan,_hasil_raw,_jk,_nama
+44.0,0.0,,1.0,0.0,0.0,Sembuh,P,HAWATI DG NGAI
+28.0,1.0,1.0,1.0,1.0,0.0,Sembuh,L,HENDRI
+63.0,1.0,,0.0,1.0,1.0,Putus berobat (lost to follow up),L,SANGKALA DG TARRA
+28.0,1.0,,1.0,0.0,0.0,Pengobatan Lengkap,L,FIRMAN
+56.0,1.0,,1.0,0.0,0.0,Pengobatan Lengkap,L,MARJIMEN DG NOJENG
+43.0,1.0,1.0,1.0,1.0,,,P,HALIJAH
+29.0,1.0,,0.0,1.0,0.0,Sembuh,P,JUSNAWATI
+48.0,1.0,0.0,1.0,0.0,0.0,Sembuh,L,KAHARUDDIN DG LEWA
+51.0,1.0,,1.0,0.0,0.0,Sembuh,P,SUJIATI
+73.0,1.0,0.0,1.0,0.0,0.0,Sembuh,L,SYAIPUDDIN DG NGAWING
+30.0,0.0,0.0,1.0,0.0,0.0,Sembuh,L,AHMAD SALAHUDDIN
+63.0,0.0,,1.0,0.0,0.0,Sembuh,L,C DG NGADANG
+20.0,0.0,,1.0,0.0,0.0,Pengobatan Lengkap,L,ZULTAN AGUNG
+24.0,1.0,0.0,0.0,1.0,,,P,ANNISA WIDYANI
+29.0,0.0,,1.0,1.0,,,L,ARWIN
+58.0,1.0,0.0,0.0,1.0,,,L,BORA DG SERANG
+29.0,1.0,0.0,0.0,1.0,,,P,IRMAWATI BORA
+50.0,1.0,1.0,0.0,0.0,0.0,Sembuh,P,NIRWANA
+43.0,1.0,0.0,1.0,0.0,0.0,Sembuh,P,IRMAYANTI DEWI BACHTIAR
+37.0,1.0,,1.0,0.0,0.0,Sembuh,L,SUGANDI SULKARNAIN
+48.0,1.0,,0.0,1.0,0.0,Sembuh,L,ABD RAHIM DG LALANG
+69.0,1.0,,0.0,1.0,0.0,Sembuh,L,ABDUL HIDAYAT DN
+60.0,1.0,,0.0,1.0,0.0,Sembuh,L,ABDUL MANNAN
+62.0,1.0,,1.0,1.0,,,L,ANCU DAENG RANI
+44.0,1.0,,1.0,1.0,1.0,Putus berobat (lost to follow up),L,ANDI ALAMSYAH
+69.0,0.0,1.0,0.0,1.0,1.0,Gagal karena Perubahan Diagnosis,L,ANDI BASRI
+48.0,1.0,,1.0,1.0,0.0,Sembuh,L,ASPAR
+38.0,1.0,,0.0,1.0,0.0,Sembuh,L,DAHLAN DG BETA
+32.0,1.0,0.0,1.0,1.0,0.0,Sembuh,L,FEBRIANTO
+43.0,1.0,,0.0,1.0,0.0,Sembuh,P,HASNAH
+44.0,1.0,0.0,0.0,1.0,0.0,Sembuh,L,HERMAN
+29.0,1.0,,0.0,1.0,0.0,Sembuh,L,IMAM MULGHALIB
+28.0,0.0,0.0,0.0,1.0,1.0,Gagal karena Perubahan Diagnosis,P,IRAWATI
+28.0,1.0,0.0,1.0,1.0,1.0,Meninggal,P,IRAWATI
+49.0,1.0,1.0,0.0,1.0,0.0,Sembuh,L,ISMAIL UMAR
+53.0,1.0,,1.0,1.0,0.0,Sembuh,L,JAFAR
+41.0,1.0,0.0,1.0,1.0,1.0,Gagal karena Perubahan Diagnosis,L,KAMALUDDIN
+41.0,1.0,,1.0,1.0,0.0,Sembuh,L,KAMALUDDIN
+46.0,0.0,,1.0,1.0,0.0,Sembuh,L,KASIM
+25.0,1.0,,0.0,1.0,0.0,Sembuh,L,M. REZKY ANDHARESTA. B
+40.0,1.0,,0.0,1.0,1.0,Gagal,L,MADI
+44.0,1.0,,1.0,1.0,,,P,Mardiana Dg. Ngai
+31.0,1.0,,0.0,1.0,,,L,MOHAMMAD FASIKHUL ULUM
+19.0,1.0,,0.0,1.0,0.0,Sembuh,L,MUH AKBAR
+17.0,1.0,,0.0,1.0,1.0,Gagal karena Perubahan Diagnosis,L,MUH ANDIKA PRATAMA
+17.0,1.0,0.0,1.0,1.0,0.0,Sembuh,L,MUH ANDIKA PRATAMA
+29.0,1.0,,0.0,1.0,0.0,Pengobatan Lengkap,L,MUH NASRUL
+50.0,1.0,,0.0,1.0,0.0,Sembuh,L,MUSTAKIM
+27.0,0.0,0.0,1.0,1.0,,,P,NUR ANNISA
+24.0,1.0,,1.0,1.0,0.0,Sembuh,P,NURAENI
+53.0,1.0,1.0,1.0,1.0,0.0,Sembuh,L,PASIMAH DG JAI
+30.0,1.0,,1.0,1.0,0.0,Sembuh,P,RISMAWATI S
+59.0,1.0,,1.0,1.0,0.0,Sembuh,P,SADARIAH DG NGASSENG
+51.0,1.0,,1.0,1.0,,,P,SAENAH DG NGINTANG
+22.0,0.0,0.0,1.0,1.0,1.0,Gagal,L,SAFITRA
+22.0,0.0,,1.0,1.0,1.0,Meninggal,L,SAFITRA
+56.0,1.0,0.0,1.0,1.0,0.0,Sembuh,L,SAHARUDDIN DG NGALLE
+54.0,1.0,,1.0,1.0,1.0,Gagal,L,SAHARUDDIN DG NGALLE
+62.0,1.0,,1.0,1.0,0.0,Sembuh,P,SAINTANG DG LIJA
+53.0,1.0,,0.0,1.0,0.0,Sembuh,P,SALATI
+58.0,1.0,,1.0,1.0,1.0,Meninggal,L,SEMMA DG NAI
+35.0,1.0,,1.0,1.0,0.0,Sembuh,P,SRI AWALIYAH NASIR
+25.0,0.0,,0.0,1.0,1.0,Gagal karena Perubahan Diagnosis,P,SRI AYU SETIA LESTARI
+25.0,1.0,,0.0,1.0,0.0,Sembuh,P,SRI AYU SETIA LESTARI
+48.0,1.0,,1.0,1.0,0.0,Sembuh,P,ST HALIMAH
+46.0,1.0,0.0,1.0,1.0,0.0,Sembuh,L,SYAMSUARDI
+21.0,1.0,0.0,0.0,1.0,0.0,Sembuh,P,TITI
+19.0,1.0,0.0,0.0,1.0,1.0,Putus berobat (lost to follow up),P,ZALSABILA
