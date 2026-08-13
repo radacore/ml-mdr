@@ -177,6 +177,24 @@ class PredictionController extends Controller
                 $interpretabilityData = null;
             }
 
+            // Fetch external validation data (kohort Gowa / TBC.03)
+            $externalValidation = null;
+            try {
+                $extResponse = Http::get("{$this->mlServiceUrl}/external-validation");
+                $externalValidation = $extResponse->successful() ? $extResponse->json() : null;
+            } catch (\Exception $e) {
+                $externalValidation = null;
+            }
+
+            // Fetch DCA data (Decision Curve Analysis + kontribusi per variabel)
+            $dcaData = null;
+            try {
+                $dcaResponse = Http::get("{$this->mlServiceUrl}/dca");
+                $dcaData = $dcaResponse->successful() ? $dcaResponse->json() : null;
+            } catch (\Exception $e) {
+                $dcaData = null;
+            }
+
             // Filter out models that are disabled by the Admin
             if ($statistics && isset($statistics['evaluation_results'])) {
                 $activeModels = \App\Models\ActiveModel::where('is_active', true)->pluck('model_name')->toArray();
@@ -237,12 +255,16 @@ class PredictionController extends Controller
             $statistics = null;
             $curvesData = null;
             $interpretabilityData = null;
+            $externalValidation = null;
+            $dcaData = null;
         }
 
         return Inertia::render('Prediction/Statistics', [
             'statistics' => $statistics,
             'curves' => $curvesData,
             'interpretability' => $interpretabilityData,
+            'externalValidation' => $externalValidation,
+            'dca' => $dcaData,
             'error' => $statistics === null || empty($statistics['evaluation_results']) ? 'Tidak dapat mengambil statistik atau belum ada model aktif dari ML Service' : null,
         ]);
     }

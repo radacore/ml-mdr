@@ -91,10 +91,12 @@ interface ShapEntry {
 }
 
 interface ShapData {
-    method: 'linear' | 'tree_proxy' | 'permutation_fallback' | 'error';
+    method: 'linear' | 'tree_proxy' | 'permutation_fallback' | 'kernel_exact' | 'error';
     features: ShapEntry[];
     values?: number[][] | null;
     detail?: string;
+    background?: string | null;
+    base_value?: number | null;
 }
 
 interface InterpretabilityData {
@@ -102,6 +104,46 @@ interface InterpretabilityData {
     feature_importance?: FeatureImportanceEntry[];
     permutation_importance?: PermutationImportanceEntry[];
     shap?: ShapData;
+}
+
+interface ExternalValidationData {
+    status?: string;
+    cohort?: {
+        period?: string;
+        site?: string;
+        source_register?: string;
+        sample_size?: number;
+        success?: number;
+        failure?: number;
+        missing_outcome?: number;
+        inclusion_criteria?: string;
+        exclusion_criteria?: string;
+        missing_profile?: Record<string, number> | null;
+    };
+    table6?: {
+        rows?: Array<{ metric: string; internal_test?: number; external_test?: number }>;
+        internal?: Record<string, number> | null;
+        external?: Record<string, number> | null;
+    } | null;
+    external_roc?: { fpr: number[]; tpr: number[]; thresholds?: number[]; auc: number | null } | null;
+    split?: Record<string, number> | null;
+    external_metrics?: Record<string, any> | null;
+}
+
+interface DCACurve {
+    thresholds: number[];
+    net_benefit_model: number[];
+    net_benefit_all: number[];
+    net_benefit_none: number[];
+    prevalence: number;
+    n: number;
+}
+
+interface DcaData {
+    status?: string;
+    curve?: DCACurve | null;
+    contributions?: Array<{ feature: string; contribution: number }> | null;
+    note?: string | null;
 }
 
 interface Statistics {
@@ -129,6 +171,8 @@ interface Props {
     statistics: Statistics | null;
     curves: Record<string, CurveData> | null;
     interpretability: Record<string, InterpretabilityData> | null;
+    externalValidation?: ExternalValidationData | null;
+    dca?: DcaData | null;
     error: string | null;
 }
 
@@ -141,7 +185,7 @@ const MODEL_COLORS: Record<string, string> = {
 const getModelColor = (name: string, idx: number) =>
     MODEL_COLORS[name] || ['#6366f1', '#ec4899', '#14b8a6'][idx % 3];
 
-export default function Statistics({ statistics, curves, interpretability, error }: Props) {
+export default function Statistics({ statistics, curves, interpretability, externalValidation, dca, error }: Props) {
     if (error || !statistics) {
         return (
             <AppLayout breadcrumbs={[{ label: 'Statistik' }]}>
@@ -885,49 +929,6 @@ export default function Statistics({ statistics, curves, interpretability, error
                     );
                 })()}
 
-                {/* Odds Ratio Table - Logistic Regression */}
-                {interpretability && (() => {
-                    const lrEntry = Object.entries(interpretability).find(([n]) => n.includes('Logistic Regression'));
-                    if (!lrEntry || !lrEntry[1].odds_ratios?.length) return null;
-                    const ors = lrEntry[1].odds_ratios!;
-                    return (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Adjusted Odds Ratio — Logistic Regression</CardTitle>
-                                <CardDescription>Odds Ratio menunjukkan besarnya pengaruh setiap fitur terhadap risiko Tidak Berhasil. OR &gt; 1 = meningkatkan risiko, OR &lt; 1 = menurunkan risiko.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="border font-bold">Fitur</TableHead>
-                                                <TableHead className="text-center border font-bold">Koefisien</TableHead>
-                                                <TableHead className="text-center border font-bold">Odds Ratio</TableHead>
-                                                <TableHead className="text-center border font-bold">95% CI</TableHead>
-                                                <TableHead className="text-center border font-bold">p-value</TableHead>
-                                                <TableHead className="text-center border font-bold">Signifikan</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {ors.map((or) => (
-                                                <TableRow key={or.feature} className={or.significant ? 'bg-yellow-50 dark:bg-yellow-950' : ''}>
-                                                    <TableCell className="border font-medium">{or.feature}</TableCell>
-                                                    <TableCell className="text-center border font-mono text-sm">{or.coefficient.toFixed(4)}</TableCell>
-                                                    <TableCell className="text-center border font-semibold">{or.odds_ratio.toFixed(3)}</TableCell>
-                                                    <TableCell className="text-center border text-sm">[{or.ci_lower.toFixed(3)} – {or.ci_upper.toFixed(3)}]</TableCell>
-                                                    <TableCell className="text-center border text-sm">{or.p_value < 0.001 ? '<0.001' : or.p_value.toFixed(3)}</TableCell>
-                                                    <TableCell className="text-center border">{or.significant ? <span className="text-green-600 font-bold">Ya</span> : <span className="text-gray-400">Tidak</span>}</TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })()}
-
                 {/* Permutation Importance - SVM */}
                 {interpretability && (() => {
                     const svmEntry = Object.entries(interpretability).find(([n]) => n.includes('Support Vector Machine'));
@@ -958,13 +959,18 @@ export default function Statistics({ statistics, curves, interpretability, error
                 {/* SHAP Feature Importance — semua model (white-box) */}
                 {interpretability && (() => {
                     const shapEntries = Object.entries(interpretability)
-                        .filter(([, v]) => v.shap && v.shap.features && v.shap.features.length > 0 && v.shap.method !== 'error');
+                        .filter(([, v]) => v.shap && v.shap.features && v.shap.features.length > 0 && v.shap.method !== 'error')
+                        .sort(([a], [b]) => {
+                            const rank = (n: string) => (n.includes('Support Vector Machine') ? 0 : n.includes('Logistic Regression') ? 1 : 2);
+                            return rank(a) - rank(b);
+                        });
                     if (shapEntries.length === 0) return null;
 
                     const methodLabels: Record<string, string> = {
                         linear: 'LinearExplainer (analitik: φᵢ = βᵢ·(xᵢ − E[xᵢ]))',
                         tree_proxy: 'Tree feature importance (proxy SHAP)',
                         permutation_fallback: 'Permutation (fallback)',
+                        kernel_exact: 'KernelExplainer (exact SHAP, 2^M koalisi)',
                     };
                     const colors: Record<string, string> = {
                         'Logistic Regression': '#8b5cf6',
@@ -995,7 +1001,7 @@ export default function Statistics({ statistics, curves, interpretability, error
                                         <ul className="mt-2 ml-5 list-disc space-y-0.5 text-xs">
                                             <li><span className="font-medium">Logistic Regression</span> — exact analytical: φᵢ = βᵢ·(xᵢ − E[xᵢ]) (ekuivalen LinearExplainer).</li>
                                             <li><span className="font-medium">Decision Tree</span> — tree feature_importances_ sebagai proxy mean(|SHAP|).</li>
-                                            <li><span className="font-medium">SVM</span> — permutation fallback (Kernel SHAP terlalu berat untuk n=151).</li>
+                                            <li><span className="font-medium">SVM</span> — KernelExplainer exact SHAP: 2^M koalisi (M = jumlah fitur) dihitung natively tanpa package shap/numba, menggunakan background 50 sampel acak dari data latih bersih (n=151, seed=42).</li>
                                         </ul>
                                     </AlertDescription>
                                 </Alert>
@@ -1005,14 +1011,25 @@ export default function Statistics({ statistics, curves, interpretability, error
                                         const sd = data.shap!;
                                         const feats = sd.features.slice(0, 17);
                                         const color = colors[name] || '#6366f1';
+                                        const isSvm = name.includes('Support Vector Machine');
                                         return (
-                                            <div key={name} className="space-y-2">
+                                            <div key={name} className={isSvm ? 'space-y-2 lg:col-span-2' : 'space-y-2'}>
                                                 <div className="flex items-center justify-between">
                                                     <h4 className="text-sm font-semibold">{name}</h4>
+                                                    {isSvm && (
+                                                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 text-[10px]">
+                                                            ★ Model Unggul
+                                                        </Badge>
+                                                    )}
                                                     <Badge variant="outline" className="border-violet-300 text-violet-700 text-[10px]">
                                                         {methodLabels[sd.method] || sd.method}
                                                     </Badge>
                                                 </div>
+                                                {sd.background && (
+                                                    <p className="text-[10px] text-muted-foreground leading-tight">
+                                                        Background: {sd.background}
+                                                    </p>
+                                                )}
                                                 <ResponsiveContainer width="100%" height={Math.max(220, feats.length * 28)}>
                                                     <BarChart data={feats} layout="vertical" margin={{ top: 5, right: 20, left: 80, bottom: 5 }}>
                                                         <CartesianGrid strokeDasharray="3 3" />
@@ -1039,6 +1056,200 @@ export default function Statistics({ statistics, curves, interpretability, error
                         </Card>
                     );
                 })()}
+
+                {/* DCA — Decision Curve Analysis (SVM) */}
+                {dca && dca.curve && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Decision Curve Analysis (DCA) — Support Vector Machine</CardTitle>
+                            <CardDescription>
+                                Net benefit model SVM dibandingkan dengan strategi "Treat All" dan "Treat None"
+                                (Vickers &amp; Elkin, 2006) pada data internal test (n={dca.curve.n}).
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <ResponsiveContainer width="100%" height={400}>
+                                <LineChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="pt" type="number" domain={[0, 1]} label={{ value: 'Threshold Probability', position: 'insideBottom', offset: -5 }} tickFormatter={(v: number) => v.toFixed(1)} />
+                                    <YAxis type="number" domain={['auto', 'auto']} label={{ value: 'Net Benefit', angle: -90, position: 'insideLeft' }} tickFormatter={(v: number) => v.toFixed(2)} />
+                                    <Tooltip formatter={(value: any, name: any) => [Number(value).toFixed(4), name]} />
+                                    <Legend />
+                                    <Line data={dca.curve.thresholds.map((t, i) => ({
+                                        pt: t,
+                                        model: dca.curve!.net_benefit_model[i],
+                                        all: dca.curve!.net_benefit_all[i],
+                                        none: dca.curve!.net_benefit_none[i],
+                                    }))} dataKey="none" name="Treat None" stroke="#9ca3af" strokeDasharray="4 4" dot={false} strokeWidth={2} />
+                                    <Line data={dca.curve.thresholds.map((t, i) => ({
+                                        pt: t,
+                                        model: dca.curve!.net_benefit_model[i],
+                                        all: dca.curve!.net_benefit_all[i],
+                                        none: dca.curve!.net_benefit_none[i],
+                                    }))} dataKey="all" name="Treat All" stroke="#f59e0b" strokeDasharray="4 4" dot={false} strokeWidth={2} />
+                                    <Line data={dca.curve.thresholds.map((t, i) => ({
+                                        pt: t,
+                                        model: dca.curve!.net_benefit_model[i],
+                                        all: dca.curve!.net_benefit_all[i],
+                                        none: dca.curve!.net_benefit_none[i],
+                                    }))} dataKey="model" name="SVM Model" stroke="#10b981" dot={false} strokeWidth={2} />
+                                </LineChart>
+                            </ResponsiveContainer>
+
+                            {dca.contributions && dca.contributions.length > 0 && (
+                                <div>
+                                    <p className="font-medium mb-2 text-sm">Kontribusi Setiap Variabel terhadap Prediksi (SVM)</p>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="border font-bold">Variabel</TableHead>
+                                                    <TableHead className="text-center border font-bold">Kontribusi (mean |SHAP|)</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {dca.contributions.map((c) => (
+                                                    <TableRow key={c.feature}>
+                                                        <TableCell className="border font-medium">{c.feature}</TableCell>
+                                                        <TableCell className="text-center border font-mono">{c.contribution.toFixed(4)}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* External Validation — Kohort Gowa */}
+                {externalValidation && externalValidation.status === 'success' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Validasi Eksternal — Kohort Kab. Gowa (Register TBC.03)</CardTitle>
+                            <CardDescription>
+                                Pengujian model pada data eksternal yang tidak pernah terlibat dalam pelatihan.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {externalValidation.cohort && (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs text-muted-foreground">Periode Kohort</p>
+                                        <p className="font-medium text-sm">{externalValidation.cohort.period}</p>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs text-muted-foreground">Lokasi</p>
+                                        <p className="font-medium text-sm">{externalValidation.cohort.site}</p>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs text-muted-foreground">Ukuran Sampel (n)</p>
+                                        <p className="font-medium text-sm">{externalValidation.cohort.sample_size} pasien</p>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs text-muted-foreground">Berhasil</p>
+                                        <p className="font-medium text-sm text-green-600">{externalValidation.cohort.success}</p>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs text-muted-foreground">Tidak Berhasil</p>
+                                        <p className="font-medium text-sm text-red-600">{externalValidation.cohort.failure}</p>
+                                    </div>
+                                    <div className="rounded-lg border bg-card p-3">
+                                        <p className="text-xs text-muted-foreground">Outcome Tidak Lengkap</p>
+                                        <p className="font-medium text-sm">{externalValidation.cohort.missing_outcome}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {externalValidation.cohort?.inclusion_criteria && (
+                                <Alert>
+                                    <AlertDescription className="text-xs space-y-1">
+                                        <p><span className="font-semibold">Kriteria inklusi:</span> {externalValidation.cohort.inclusion_criteria}</p>
+                                        <p><span className="font-semibold">Kriteria eksklusi:</span> {externalValidation.cohort.exclusion_criteria}</p>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
+                            {(() => {
+                                const mp = externalValidation.cohort?.missing_profile;
+                                const entries = mp ? Object.entries(mp) : [];
+                                if (!externalValidation.cohort?.missing_profile) return null;
+                                if (entries.length === 0) {
+                                    return (
+                                        <Alert className="border-green-200 bg-green-50/40">
+                                            <AlertDescription className="text-xs">
+                                                <span className="font-semibold">Profil missing value:</span>{' '}
+                                                Tidak ada missing value pada seluruh fitur model (5/5 fitur lengkap).
+                                            </AlertDescription>
+                                        </Alert>
+                                    );
+                                }
+                                return (
+                                    <Alert className="border-amber-200 bg-amber-50/40">
+                                        <AlertDescription className="text-xs">
+                                            <span className="font-semibold">Profil missing value:</span>{' '}
+                                            {entries.map(([k, v]) => `${k} = ${v}`).join('; ')}.
+                                        </AlertDescription>
+                                    </Alert>
+                                );
+                            })()}
+
+                            {externalValidation.table6?.rows && (
+                                <div>
+                                    <p className="font-medium mb-2 text-sm">Tabel 6 — Perbandingan Metrik: Validasi Internal vs Eksternal</p>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="border font-bold">Metrik</TableHead>
+                                                    <TableHead className="text-center border font-bold">Internal (Test)</TableHead>
+                                                    <TableHead className="text-center border font-bold">Eksternal (Gowa)</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {externalValidation.table6.rows.map((row) => (
+                                                    <TableRow key={row.metric}>
+                                                        <TableCell className="border font-medium">{row.metric}</TableCell>
+                                                        <TableCell className="text-center border">{typeof row.internal_test === 'number' ? row.internal_test.toFixed(2) : '-'}</TableCell>
+                                                        <TableCell className="text-center border font-semibold">
+                                                            {typeof row.external_test === 'number' ? row.external_test.toFixed(2) : '-'}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {externalValidation.external_roc && (
+                                <div>
+                                    <p className="font-medium mb-2 text-sm">
+                                        ROC Curve pada Data Eksternal (AUC = {externalValidation.external_roc.auc?.toFixed(3) ?? 'N/A'})
+                                    </p>
+                                    <ResponsiveContainer width="100%" height={320}>
+                                        <LineChart margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis dataKey="fpr" type="number" domain={[0, 1]} label={{ value: 'False Positive Rate', position: 'insideBottom', offset: -5 }} tickFormatter={(v: number) => v.toFixed(1)} />
+                                            <YAxis type="number" domain={[0, 1]} label={{ value: 'True Positive Rate', angle: -90, position: 'insideLeft' }} tickFormatter={(v: number) => v.toFixed(1)} />
+                                            <Tooltip formatter={(value: any) => Number(value).toFixed(4)} />
+                                            <Legend />
+                                            <Line data={[{ fpr: 0, tpr: 0 }, { fpr: 1, tpr: 1 }]} dataKey="tpr" name="Random (AUC=0.50)" stroke="#d1d5db" strokeDasharray="5 5" dot={false} />
+                                            <Line data={externalValidation.external_roc.fpr.map((fpr: number, i: number) => ({ fpr, tpr: externalValidation.external_roc!.tpr[i] }))} dataKey="tpr" name="External SVM (5 fitur)" stroke="#10b981" dot={false} strokeWidth={2} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
+
+                            {externalValidation.split && (
+                                <p className="text-xs text-muted-foreground">
+                                    Pemisahan data: internal bersih {externalValidation.split.internal_clean} (train {externalValidation.split.train}, validation {externalValidation.split.validation}, test {externalValidation.split.test}); Gowa total {externalValidation.split.gowa_total}, valid {externalValidation.split.gowa_valid}.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Rumus Metrik */}
                 <Card>

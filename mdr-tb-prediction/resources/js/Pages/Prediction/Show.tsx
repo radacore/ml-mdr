@@ -50,6 +50,14 @@ interface TopSVC {
     contribution: number;
 }
 
+interface ShapAttributionEntry {
+    feature: string;
+    shap_value: number;
+    shap_mean_abs: number;
+    raw_value: number;
+    scaled_value: number;
+}
+
 interface FactorContributions {
     intercept: number;
     base_probability: number;
@@ -68,6 +76,12 @@ interface FactorContributions {
     A?: number;
     B?: number;
     top_sv?: TopSVC[];
+    shap?: {
+        method?: string | null;
+        background?: string | null;
+        base_value?: number | null;
+        features?: ShapAttributionEntry[] | null;
+    } | null;
 }
 
 interface Props {
@@ -523,6 +537,42 @@ export default function Show({ prediction, factorContributions }: Props) {
                                                                 <td className="border p-2 text-center font-mono">{fmtNum(s.dual)}</td>
                                                                 <td className="border p-2 text-center font-mono">{fmtNum(s.kernel)}</td>
                                                                 <td className="border p-2 text-center font-mono">{fmtNum(s.contribution)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {svmFC.shap?.features && svmFC.shap.features.length > 0 && (
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                                Atribusi SHAP per fitur (KernelExplainer — exact SHAP, 2^M koalisi):
+                                            </p>
+                                            {svmFC.shap.base_value != null && (
+                                                <p className="text-[11px] text-slate-400">
+                                                    Baseline P(Berhasil) = {fmtNum(svmFC.shap.base_value * 100, 2)}% · background: {svmFC.shap.background ?? '—'}
+                                                </p>
+                                            )}
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
+                                                    <thead>
+                                                        <tr className="bg-slate-100 dark:bg-slate-800">
+                                                            <th className="border p-2 text-left">Fitur</th>
+                                                            <th className="border p-2 text-center">Nilai (x)</th>
+                                                            <th className="border p-2 text-center">z</th>
+                                                            <th className="border p-2 text-center">SHAP value (φ)</th>
+                                                            <th className="border p-2 text-center">|φ|</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {svmFC.shap.features.map((sf) => (
+                                                            <tr key={sf.feature} className="odd:bg-slate-50 dark:odd:bg-slate-800/50">
+                                                                <td className="border p-2 text-left font-medium">{sf.feature}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.raw_value)}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.scaled_value)}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.shap_value)}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.shap_mean_abs)}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
