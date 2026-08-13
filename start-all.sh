@@ -75,28 +75,34 @@ command -v npm  >/dev/null || { log_err "npm tidak ditemukan di PATH"; exit 1; }
 }
 
 # --- Cek port bentrok --------------------------------------------------------
-OCCUPIED_PORTS=()
+# Jika ada proses lama yang menduduki port kita, bunuh otomatis lalu lanjut,
+# supaya launcher bisa dijalankan ulang tanpa harus kill manual.
+
+kill_port() {
+    local port="$1"
+    local pids
+    pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null)
+    if [ -n "$pids" ]; then
+        kill -TERM $pids 2>/dev/null
+        sleep 0.5
+        # Force kill yang masih hidup
+        pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null)
+        if [ -n "$pids" ]; then
+            kill -KILL $pids 2>/dev/null
+        fi
+    fi
+}
 
 check_port() {
     local port="$1"
     local svc="$2"
-    if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
-        OCCUPIED_PORTS+=("$port")
-        log_warn "Port $port sudah dipakai oleh proses lain ($svc mungkin gagal start)."
-        log_warn "  Cek dengan: lsof -nP -iTCP:$port -sTCP:LISTEN"
-        log_warn "  Kill dengan: kill \$(lsof -tiTCP:$port -sTCP:LISTEN)"
+    local pids
+    pids=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | awk 'NR>1 {print $2}' | sort -u)
+    if [ -n "$pids" ]; then
+        log_warn "Port $port dipakai proses lama ($svc) — PID: $pids"
+        log_warn "  Membunuh proses lama otomatis agar $svc bisa start."
+        kill_port "$port"
     fi
-}
-
-port_was_occupied() {
-    local port="$1"
-    local occupied_port
-    for occupied_port in "${OCCUPIED_PORTS[@]}"; do
-        if [ "$occupied_port" = "$port" ]; then
-            return 0
-        fi
-    done
-    return 1
 }
 
 # --- Banner ------------------------------------------------------------------
@@ -123,34 +129,6 @@ check_port 8888 "Jupyter Notebook"
 
 # --- Array PID untuk cleanup -------------------------------------------------
 PIDS=()
-
-# Kill helper berbasis port — fallback agar process yang sudah detach dari
-# script (misalnya php artisan serve yang spawn worker, vite yang fork esbuild)
-# tetap terhenti.
-kill_port() {
-    local port="$1"
-    local pids
-    pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null)
-    if [ -n "$pids" ]; then
-        kill -TERM $pids 2>/dev/null
-        sleep 0.5
-        # Force kill yang masih hidup
-        pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null)
-        if [ -n "$pids" ]; then
-            kill -KILL $pids 2>/dev/null
-        fi
-    fi
-}
-
-kill_port_if_started_here() {
-    local port="$1"
-    if port_was_occupied "$port"; then
-        log_warn "  Skip cleanup port $port karena sudah dipakai sebelum launcher berjalan."
-        return
-    fi
-
-    kill_port "$port"
-}
 
 CLEANED_UP=0
 cleanup() {
@@ -179,12 +157,12 @@ cleanup() {
         fi
     done
 
-    # 3) Safety net: kill apa pun yang masih listen di 4 port kita,
-    #    tapi jangan bunuh service yang sudah berjalan sebelum launcher ini.
-    kill_port_if_started_here 5000
-    kill_port_if_started_here 8000
-    kill_port_if_started_here 5173
-    kill_port_if_started_here 8888
+    # 3) Safety net: kill apa pun yang masih listen di 4 port kita
+    #    (semua port dijamin milik launcher karena proses lama sudah di-kill saat start).
+    kill_port 5000
+    kill_port 8000
+    kill_port 5173
+    kill_port 8888
 
     log_info "Semua service dihentikan. Bye!"
     exit 0
