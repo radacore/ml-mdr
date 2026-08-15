@@ -95,7 +95,7 @@ export default function Landing({ canLogin, canRegister }: Props) {
                                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6 leading-tight">
                                     Prediksi Hasil Pengobatan{" "}
                                     <span className="text-purple-600">
-                                        TB-MDR
+                                        MDR-TB
                                     </span>{" "}
                                     Lebih Akurat.
                                 </h1>
@@ -220,9 +220,9 @@ export default function Landing({ canLogin, canRegister }: Props) {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center max-w-3xl mx-auto mb-16">
                             <h2 className="text-purple-600 font-semibold tracking-wide uppercase text-sm mb-2">Mengapa SRI-Predict MDR-TB?</h2>
-                            <h3 className="text-3xl font-bold text-gray-900 mb-4">Tantangan TB-MDR Masa Kini</h3>
+                            <h3 className="text-3xl font-bold text-gray-900 mb-4">Tantangan MDR-TB Masa Kini</h3>
                             <p className="text-gray-600 text-lg">
-                                Pengobatan TB-MDR membutuhkan durasi panjang
+                                Pengobatan MDR-TB membutuhkan durasi panjang
                                 (18-24 bulan) dengan rejimen obat yang kompleks
                                 dan efek samping berat. Keputusan klinis yang
                                 lambat dapat berakibat fatal.
@@ -513,7 +513,7 @@ export default function Landing({ canLogin, canRegister }: Props) {
                                                 Dapatkan gambaran objektif agar
                                                 Anda lebih siap secara mental
                                                 dan fisik dalam menjalani masa
-                                                pengobatan TB-MDR yang panjang.
+                                                pengobatan MDR-TB yang panjang.
                                             </p>
                                         </div>
                                     </li>
@@ -549,7 +549,7 @@ export default function Landing({ canLogin, canRegister }: Props) {
                             <div className="absolute bottom-0 right-0 -mb-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full"></div>
 
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                                Gratis Akses untuk Seluruh Pejuang TB-MDR
+                                Gratis Akses untuk Seluruh Pejuang MDR-TB
                             </h2>
                             <p className="text-purple-100 text-lg mb-10 max-w-2xl mx-auto">
                                 Platform ini dikembangkan khusus untuk membantu

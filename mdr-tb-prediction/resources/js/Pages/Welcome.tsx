@@ -187,7 +187,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="Prediksi Keberhasilan Pengobatan TB-MDR" />
+            <Head title="Prediksi Keberhasilan Pengobatan MDR-TB" />
             <div className="min-h-screen bg-gray-50 flex flex-col">
                 <Navbar minimal />
 
@@ -201,7 +201,7 @@ export default function Welcome() {
                                     Prediksi Keberhasilan Pengobatan
                                 </h1>
                                 <p className="text-xl text-purple-600 font-semibold mb-2">
-                                    Multi-Drug Resistant Tuberculosis (TB-MDR)
+                                    Multi-Drug Resistant Tuberculosis (MDR-TB)
                                 </p>
                                 <p className="text-gray-600 max-w-xl mx-auto leading-relaxed">
                                     Gunakan sistem Machine Learning kami untuk membantu Anda memahami peluang kesembuhan secara mandiri.

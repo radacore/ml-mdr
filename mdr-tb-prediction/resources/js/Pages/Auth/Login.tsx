@@ -64,7 +64,7 @@ export default function Login({
                         {/* Center Text */}
                         <div className="max-w-md">
                             <h1 className="text-4xl font-bold leading-tight mb-4">
-                                Prediksi Cerdas untuk Pengobatan TB-MDR
+                                Prediksi Cerdas untuk Pengobatan MDR-TB
                             </h1>
                             <p className="text-purple-200 text-lg leading-relaxed">
                                 Sistem berbasis Machine Learning yang membantu
