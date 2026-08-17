@@ -6,6 +6,10 @@ Implementasi DCA (Vickers & Elkin, 2006):
 
 - Kurva Net Benefit model vs Treat-All vs Treat-None terhadap threshold pt.
 - Kontribusi per variabel: rata-rata |SHAP| per fitur dari model SVM (KernelExplainer exact).
+
+Konsistensi web <> notebook:
+- f(x) = P(Berhasil) (positive_class=0), sama dengan notebook & interpretability per-pasien.
+- Background: 50 sampel acak dari data latih bersih (seed=42), sama dengan notebook.
 """
 
 import os
@@ -88,15 +92,19 @@ def variable_contribution(shap_mean_abs: Dict[str, float]) -> List[Dict[str, flo
 
 def run_dca(verbose: bool = True) -> Dict[str, object]:
     """
-    Jalankan DCA untuk model SVM 5-fitur internal + kontribusi per variabel.
+    Jalankan DCA untuk model SVM 9-fitur internal + kontribusi per variabel.
 
     Menggunakan data internal (X_test) dengan model SVM yang dilatih ulang
-    pada 5 fitur (konsisten dengan external validation).
+    pada 9 fitur (konsisten dengan external validation). f(x) = P(Berhasil).
+
+    Mengembalikan detail SHAP (values, base_value, X_test_scaled, y_test)
+    agar notebook & web memakai sumber komputasi yang sama persis.
     """
     from external_validation import _build_pipeline, _tune_svm, RANDOM_STATE
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
     from sklearn.metrics import roc_auc_score
+    from shap_exact import exact_shap_svm, _background_sample, SHAP_BACKGROUND_NAME
 
     internal = _load_internal()
     X_int = internal[EXTERNAL_FEATURES]
@@ -126,11 +134,14 @@ def run_dca(verbose: bool = True) -> Dict[str, object]:
 
     curve = dca_curve(y_test, y_proba)
 
-    # Kontribusi per variabel: SHAP exact (KernelExplainer-style) untuk SVM
-    from shap_exact import exact_shap_svm
+    # Kontribusi per variabel: SHAP exact (KernelExplainer-style) untuk SVM.
+    # Background: 50 sampel acak dari data latih bersih (seed=42) — konsisten
+    # dengan notebook & interpretability per-pasien di web.
+    bg = _background_sample(X_train_s)
     shap_result = exact_shap_svm(
-        scaler=scaler, clf=clf, X_test=X_test_s, background=X_train_s,
-        feature_names=EXTERNAL_FEATURES
+        scaler=scaler, clf=clf, X_test=X_test_s, background=bg,
+        feature_names=EXTERNAL_FEATURES,
+        positive_class=0,  # P(Berhasil) — konsisten dgn notebook & web
     )
     contributions = variable_contribution(shap_result["mean_abs"])
 
@@ -145,6 +156,17 @@ def run_dca(verbose: bool = True) -> Dict[str, object]:
         "curve": curve,
         "contributions": contributions,
         "auc_roc": float(roc_auc_score(y_test, y_proba)) if len(np.unique(y_test)) > 1 else None,
+        # Detail SHAP untuk reproduksi plot yang identik di notebook:
+        "shap": {
+            "method": shap_result["method"],
+            "background": shap_result["background"],
+            "base_value": float(shap_result["base_value"]),
+            "feature_names": list(EXTERNAL_FEATURES),
+            "mean_abs": {k: float(v) for k, v in shap_result["mean_abs"].items()},
+            "values": shap_result["values"],
+            "X_test_scaled": np.asarray(X_test_s, dtype=float).tolist(),
+            "y_test": [int(v) for v in y_test],
+        },
     }
 
     if verbose:

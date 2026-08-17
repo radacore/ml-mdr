@@ -1009,9 +1009,15 @@ export default function Statistics({ statistics, curves, interpretability, exter
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                     {shapEntries.map(([name, data]) => {
                                         const sd = data.shap!;
-                                        const feats = sd.features.slice(0, 17);
-                                        const color = colors[name] || '#6366f1';
                                         const isSvm = name.includes('Support Vector Machine');
+                                        // Konsistensi: untuk SVM, pakai sumber yang sama dengan tabel
+                                        // "Kontribusi Setiap Variabel" (endpoint /dca, seed 42) — nilai
+                                        // identik dengan notebook disertasi, bukan /interpretability.
+                                        const dcaFeats = isSvm && dca?.contributions?.length
+                                            ? dca.contributions.map(c => ({ feature: c.feature, shap_mean_abs: c.contribution }))
+                                            : null;
+                                        const feats = (dcaFeats ?? sd.features).slice(0, 17);
+                                        const color = colors[name] || '#6366f1';
                                         return (
                                             <div key={name} className={isSvm ? 'space-y-2 lg:col-span-2' : 'space-y-2'}>
                                                 <div className="flex items-center justify-between">
@@ -1103,13 +1109,15 @@ export default function Statistics({ statistics, curves, interpretability, exter
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
+                                                    <TableHead className="text-center border font-bold w-14">Rank</TableHead>
                                                     <TableHead className="border font-bold">Variabel</TableHead>
                                                     <TableHead className="text-center border font-bold">Kontribusi (mean |SHAP|)</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {dca.contributions.map((c) => (
+                                                {dca.contributions.map((c, i) => (
                                                     <TableRow key={c.feature}>
+                                                        <TableCell className="text-center border font-mono">{i + 1}</TableCell>
                                                         <TableCell className="border font-medium">{c.feature}</TableCell>
                                                         <TableCell className="text-center border font-mono">{c.contribution.toFixed(4)}</TableCell>
                                                     </TableRow>
