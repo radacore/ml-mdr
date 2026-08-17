@@ -14,7 +14,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from external_validation import _load_internal, _load_gowa, _impute_mode, GOWA_FEATURES
+from external_validation import _load_internal, _load_gowa, _impute_mode, EXTERNAL_FEATURES
 
 
 def dca_curve(y_true: np.ndarray, y_proba: np.ndarray,
@@ -99,7 +99,7 @@ def run_dca(verbose: bool = True) -> Dict[str, object]:
     from sklearn.metrics import roc_auc_score
 
     internal = _load_internal()
-    X_int = internal[GOWA_FEATURES]
+    X_int = internal[EXTERNAL_FEATURES]
     y_int = internal["Keberhasilan Pengobatan"].astype(int).values
 
     # Split 70/15/15 stratify (konsisten external validation)
@@ -130,7 +130,7 @@ def run_dca(verbose: bool = True) -> Dict[str, object]:
     from shap_exact import exact_shap_svm
     shap_result = exact_shap_svm(
         scaler=scaler, clf=clf, X_test=X_test_s, background=X_train_s,
-        feature_names=GOWA_FEATURES
+        feature_names=EXTERNAL_FEATURES
     )
     contributions = variable_contribution(shap_result["mean_abs"])
 
@@ -140,7 +140,7 @@ def run_dca(verbose: bool = True) -> Dict[str, object]:
             "name": "Support Vector Machine (DCA)",
             "best_params": {k: str(v) for k, v in clf.get_params().items() if k in ("C", "gamma", "kernel")},
             "smote_applied": smote_applied,
-            "features": GOWA_FEATURES,
+            "features": EXTERNAL_FEATURES,
         },
         "curve": curve,
         "contributions": contributions,

@@ -176,10 +176,10 @@ if __name__ == "__main__":
     from sklearn.svm import SVC
     from sklearn.model_selection import train_test_split
 
-    from external_validation import _load_internal, GOWA_FEATURES, RANDOM_STATE
+    from external_validation import _load_internal, EXTERNAL_FEATURES, RANDOM_STATE
 
     internal = _load_internal()
-    X = internal[GOWA_FEATURES].values
+    X = internal[EXTERNAL_FEATURES].values
     y = internal["Keberhasilan Pengobatan"].values
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
@@ -189,7 +189,7 @@ if __name__ == "__main__":
         scaler.transform(X_train), y_train
     )
     bg = _background_sample(scaler.transform(X_train))
-    res = exact_shap_svm(scaler, clf, scaler.transform(X_test[:5]), bg, GOWA_FEATURES)
+    res = exact_shap_svm(scaler, clf, scaler.transform(X_test[:5]), bg, EXTERNAL_FEATURES)
     print("method:", res["method"], "| background:", res["background"])
     print("base_value:", res["base_value"])
     print("features:", res["features"])

@@ -1,17 +1,22 @@
 """
 External Validation Module — Kohort Gowa
 
-Validasi eksternal model SVM (5 fitur yang tersedia di kedua dataset):
+Validasi eksternal model SVM (9 fitur model produksi web yang tersedia di
+kedua dataset):
 
-    Ket.Usia, Pemeriksaan Kontak, Riwayat_DM,
+    Ket.Usia, Status Bekerja, Status Merokok, Riwayat_DM, Riwayat_HIV,
+    Kepatuhan Minum Obat, Efek Samping Obat,
     Riwayat Pengobatan Sebelumnya, Panduan Pengobatan
 
-Alur:
-1. Latih model internal 5-fitur pada data training (data_uji_ml.csv),
-   split 70/15/15 + SMOTE + tuning, konsisten dengan pipeline produksi.
-2. Evaluasi pada test internal (Table 6 kolom "Internal test").
-3. Evaluasi pada data Gowa (Table 6 kolom "External test") + ROC eksternal.
-4. Kembalikan profil kohort, metrik, dan data ROC.
+Alur (Skenario 3 — augmentasi data latih):
+1. Gabungkan data latih internal (data_uji_ml.csv) + Gowa (data_gowa.csv)
+   menjadi satu dataset latih (196 baris).
+2. Latih model SVM 9-fitur + SMOTE + tuning pada data gabungan.
+3. Evaluasi pada holdout 15% data gabungan (Table 6 kolom "Internal test").
+4. Evaluasi eksternal pada seluruh Gowa (Table 6 kolom "External test") +
+   ROC eksternal. Catatan: Gowa ikut dalam data latih (augmentasi),
+   sehingga metrik eksternal di sini bukan validasi eksternal murni.
+5. Kembalikan profil kohort, metrik, dan data ROC.
 """
 
 import os
@@ -28,13 +33,26 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
-from gowa_parser import GOWA_FEATURES, cohort_profile, DEFAULT_OUTPUT
+from gowa_parser import cohort_profile, DEFAULT_OUTPUT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 INTERNAL_DATA = os.path.abspath(os.path.join(HERE, "..", "data", "data_uji_ml.csv"))
 GOWA_DATA = os.path.abspath(os.path.join(HERE, "..", "data", "data_gowa.csv"))
 
-EXTERNAL_MODEL_NAME = "Support Vector Machine (external 5-fiturs)"
+# 9 fitur model produksi web yang tersedia di kedua dataset (internal & Gowa).
+EXTERNAL_FEATURES = [
+    "Ket.Usia",
+    "Status Bekerja",
+    "Status Merokok",
+    "Riwayat_DM",
+    "Riwayat_HIV",
+    "Kepatuhan Minum Obat",
+    "Efek Samping Obat",
+    "Riwayat Pengobatan Sebelumnya",
+    "Panduan Pengobatan",
+]
+
+EXTERNAL_MODEL_NAME = "Support Vector Machine (external 9-fiturs)"
 RANDOM_STATE = 42
 
 
@@ -47,16 +65,20 @@ def _load_internal() -> pd.DataFrame:
     df_processed = pre.preprocess(df)
 
     # Target sudah di-encode oleh preprocessor (Berhasil=0, Tidak Berhasil=1)
-    subset = [c for c in GOWA_FEATURES if c in df_processed.columns]
+    subset = [c for c in EXTERNAL_FEATURES if c in df_processed.columns]
     out = df_processed[subset + ["Keberhasilan Pengobatan"]].copy()
-    # Drop baris dengan missing pada 5 fitur
+    # Drop baris dengan missing pada fitur eksternal
     out = out.dropna(subset=subset + ["Keberhasilan Pengobatan"]).reset_index(drop=True)
     return out
 
 
-def _load_gowa() -> pd.DataFrame:
+def _load_gowa(exclude_mono_inh: bool = True) -> pd.DataFrame:
     df = pd.read_csv(GOWA_DATA)
     df = df.drop(columns=["_hasil_raw", "_jk", "_nama"], errors="ignore")
+    # Eksklusi pasien dengan paduan monoresistan INH (bukan TBC RO sejati)
+    if exclude_mono_inh and "_paduan_oat" in df.columns:
+        df = df[df["_paduan_oat"].fillna("") != "Paduan Monoresistan INH"].reset_index(drop=True)
+    df = df.drop(columns=["_paduan_oat"], errors="ignore")
     return df
 
 
@@ -113,20 +135,36 @@ def _evaluate(y_true, y_pred, y_proba) -> Dict[str, float]:
     return metrics
 
 
-def run_external_validation(use_smote: bool = True, verbose: bool = True) -> Dict[str, object]:
-    """Jalankan pipeline external validation; return dict hasil lengkap."""
+def run_external_validation(use_smote: bool = True, exclude_mono_inh: bool = True, verbose: bool = True) -> Dict[str, object]:
+    """Jalankan pipeline external validation (Skenario 3); return dict hasil lengkap.
+
+    Skenario 3: data latih = gabungan internal (Makassar) + Gowa, lalu
+    dievaluasi eksternal pada seluruh Gowa. Karena Gowa ikut data latih,
+    angka eksternal merefleksikan augmentasi data latih, bukan EV murni.
+    """
     internal = _load_internal()
-    gowa = _load_gowa()
+    gowa = _load_gowa(exclude_mono_inh=exclude_mono_inh)
 
     # Imputasi mode pada Gowa (Riwayat_DM 'Tidak Diketahui')
     gowa = _impute_mode(gowa, ["Riwayat_DM"])
 
-    X_int = internal[GOWA_FEATURES]
-    y_int = internal["Keberhasilan Pengobatan"]
+    # Evaluasi eksternal hanya pada baris Gowa dengan outcome lengkap
+    gowa_complete = gowa.dropna(subset=["Keberhasilan Pengobatan"]).reset_index(drop=True)
 
-    # Split 70/15/15
+    # ---- Skenario 3: gabung data latih internal + Gowa ----
+    merged = pd.concat(
+        [
+            internal[EXTERNAL_FEATURES + ["Keberhasilan Pengobatan"]],
+            gowa_complete[EXTERNAL_FEATURES + ["Keberhasilan Pengobatan"]],
+        ],
+        ignore_index=True,
+    )
+    X_all = merged[EXTERNAL_FEATURES]
+    y_all = merged["Keberhasilan Pengobatan"]
+
+    # Split 70/15/15 pada data gabungan (untuk kolom Internal test)
     X_rest, X_test, y_rest, y_test = train_test_split(
-        X_int, y_int, test_size=0.15, random_state=RANDOM_STATE, stratify=y_int
+        X_all, y_all, test_size=0.15, random_state=RANDOM_STATE, stratify=y_all
     )
     X_train, X_val, y_train, y_val = train_test_split(
         X_rest, y_rest, test_size=0.15 / 0.85, random_state=RANDOM_STATE, stratify=y_rest
@@ -149,11 +187,11 @@ def run_external_validation(use_smote: bool = True, verbose: bool = True) -> Dic
     X_train_s = scaler.transform(X_train)
     X_val_s = scaler.transform(X_val)
     X_test_s = scaler.transform(X_test)
-    X_gowa_s = scaler.transform(gowa[GOWA_FEATURES])
+    X_gowa_s = scaler.transform(gowa_complete[EXTERNAL_FEATURES])
 
     clf = _tune_svm(X_train_s, y_train)
 
-    # Evaluasi pada internal test
+    # Evaluasi pada internal test (holdout dari data gabungan)
     y_test_pred = clf.predict(X_test_s)
     y_test_proba = clf.predict_proba(X_test_s)[:, 1]
     internal_metrics = _evaluate(y_test, y_test_pred, y_test_proba)
@@ -163,13 +201,11 @@ def run_external_validation(use_smote: bool = True, verbose: bool = True) -> Dic
     y_val_proba = clf.predict_proba(X_val_s)[:, 1]
     internal_val = _evaluate(y_val, y_val_pred, y_val_proba)
 
-    # Evaluasi eksternal: hanya baris Gowa dengan outcome lengkap
-    gowa_complete = gowa.dropna(subset=["Keberhasilan Pengobatan"]).reset_index(drop=True)
-    X_gowa_full_s = scaler.transform(gowa_complete[GOWA_FEATURES])
+    # Evaluasi eksternal: seluruh Gowa (baris dengan outcome lengkap)
     y_gowa_true = gowa_complete["Keberhasilan Pengobatan"].astype(int).values
 
-    y_gowa_pred = clf.predict(X_gowa_full_s)
-    y_gowa_proba = clf.predict_proba(X_gowa_full_s)[:, 1]
+    y_gowa_pred = clf.predict(X_gowa_s)
+    y_gowa_proba = clf.predict_proba(X_gowa_s)[:, 1]
     external_metrics = _evaluate(y_gowa_true, y_gowa_pred, y_gowa_proba)
 
     # ROC eksternal — sanitasi inf/nan (roc_curve menaruh inf di thresholds pertama,
@@ -186,7 +222,7 @@ def run_external_validation(use_smote: bool = True, verbose: bool = True) -> Dic
         "auc": external_metrics.get("auc_roc"),
     }
 
-    profile = cohort_profile(gowa)
+    profile = cohort_profile(gowa, features=EXTERNAL_FEATURES)
 
     table6 = {
         "internal": {k: internal_metrics.get(k) for k in ["accuracy", "precision", "recall", "f1"]},
@@ -213,7 +249,7 @@ def run_external_validation(use_smote: bool = True, verbose: bool = True) -> Dic
             "name": EXTERNAL_MODEL_NAME,
             "best_params": {k: str(v) for k, v in clf.get_params().items() if k in ("C", "gamma", "kernel")},
             "smote_applied": smote_applied,
-            "features": GOWA_FEATURES,
+            "features": EXTERNAL_FEATURES,
         },
         "cohort": profile,
         "table6": {
@@ -226,7 +262,7 @@ def run_external_validation(use_smote: bool = True, verbose: bool = True) -> Dic
         "external_metrics": external_metrics,
         "external_roc": external_roc,
         "split": {
-            "internal_clean": int(len(X_int)),
+            "internal_clean": int(len(merged)),
             "train": int(len(X_train_s)),
             "validation": int(len(X_val_s)),
             "test": int(len(X_test_s)),
@@ -236,7 +272,7 @@ def run_external_validation(use_smote: bool = True, verbose: bool = True) -> Dic
     }
 
     if verbose:
-        print("=== External Validation (Kohort Gowa) ===")
+        print("=== External Validation (Kohort Gowa) — Skenario 3: data latih gabungan ===")
         print(f"Model: {result['model']['name']} | params={result['model']['best_params']} | SMOTE={smote_applied}")
         print(f"Internal test: {internal_metrics}")
         print(f"External test: {external_metrics}")

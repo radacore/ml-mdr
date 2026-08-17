@@ -15,15 +15,18 @@ Keputusan pemetaan (dokumentasi untuk disertasi):
   'Tidak Diketahui' dikodekan NaN (masuk profil data hilang; diimputasi mode saat training).
 - 'Klasifikasi Berdasarkan Riwayat Pengobatan Sebelumnya' -> Riwayat Pengobatan Sebelumnya.
   Baru -> Baru (0); selain Baru (Kambuh, gagal lini 2, putus berobat, dst) -> Kasus Lama (1).
-- 'Paduan Pengobatan' -> Panduan Pengobatan. 'Lfx RHZE' (short-course) -> Jangka Pendek (0);
-  regimen lain (Bdq..., dll) -> Jangka Panjang (1).
+- 'Paduan OAT' (kolom 42) -> Panduan Pengobatan. Register mencatat kategori eksplisit:
+  'Paduan Jangka Pendek' -> Jangka Pendek (0); 'Paduan Monoresistan INH' -> Jangka Pendek (0);
+  'Paduan Jangka Panjang' -> Jangka Panjang (1); 'Paduan Individual' -> Jangka Panjang (1).
+  Kolom 41 ('Paduan Pengobatan') berisi nama regimen (mis. 'Bdq Lzd Mfx Pa') dan TIDAK dipakai
+  sebagai sumber kategori, karena regimen short-course (BPaLM) akan salah diklasifikasikan.
 - 'Hasil Akhir Pengobatan' -> Keberhasilan Pengobatan.
   Sembuh / Pengobatan Lengkap -> Berhasil (0); Gagal, Gagal karena Perubahan Diagnosis,
   Meninggal, Putus berobat -> Tidak Berhasil (1); belum ada hasil -> NaN (dieksklusi).
 
 Kolom register (0-indexed setelah multi-row header):
    15 Umur, 16 Jenis Kelamin, 30 Pemeriksaan Kontak, 34 Klasifikasi Riwayat,
-   36 Riwayat DM, 41 Paduan Pengobatan, 139 Hasil Akhir Pengobatan (Hasil).
+   36 Riwayat DM, 42 Paduan OAT (kategori), 139 Hasil Akhir Pengobatan (Hasil).
 """
 
 import os
@@ -34,7 +37,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SOURCE = os.path.abspath(
-    os.path.join(HERE, "..", "..", "Kab_Gowa_Report_TB_03RO_latifa11_Januari_2023-Desember_2025.xls")
+    os.path.join(HERE, "..", "..", "Kab_Gowa_Report_TB_03RO_latifa11_Januari_2024-Agustus_2026.xls")
 )
 DEFAULT_OUTPUT = os.path.join(HERE, "..", "data", "data_gowa.csv")
 
@@ -52,7 +55,7 @@ COLUMN_MAP = [
     (30, "Pemeriksaan Kontak"),
     (36, "Riwayat_DM"),
     (34, "Riwayat Pengobatan Sebelumnya"),
-    (41, "Panduan Pengobatan"),
+    (42, "Panduan Pengobatan"),
 ]
 
 # Outcome register -> target biner (Berhasil=0, Tidak Berhasil=1) -> label
@@ -103,11 +106,17 @@ def _map_riwayat_pengobatan(value) -> float:
 
 def _map_paduan(value) -> float:
     s = str(value).strip()
-    # Paduan jangka pendek (short course) berbasis Lfx RHZE
-    if s.upper().startswith("LFX RHZE"):
+    # Kategori eksplisit dari kolom 'Paduan OAT' (register). 'Paduan Monoresistan INH'
+    # dikelompokkan ke jangka pendek (0); 'Paduan Individual' diperlakukan seperti
+    # jangka panjang (1) karena bukan paduan short-course standar.
+    if s == "Paduan Jangka Pendek":
         return 0.0
-    if s:
+    if s == "Paduan Monoresistan INH":
+        return 0.0
+    if s in ("Paduan Jangka Panjang", "Paduan Individual"):
         return 1.0
+    if s:
+        return np.nan
     return np.nan
 
 
@@ -142,10 +151,11 @@ def build_gowa_dataframe(source: str = DEFAULT_SOURCE) -> pd.DataFrame:
 
     # Target dari 'Hasil Akhir Pengobatan' (kolom 139)
     df["Keberhasilan Pengobatan"] = raw.iloc[17:, 139].apply(_map_outcome).reset_index(drop=True)
-    # Kolom bantu profil (raw outcome, JK, nama) — untuk laporan kohort
+    # Kolom bantu profil (raw outcome, JK, nama, kategori Paduan OAT) — untuk laporan kohort
     df["_hasil_raw"] = raw.iloc[17:, 139].reset_index(drop=True)
     df["_jk"] = raw.iloc[17:, 16].reset_index(drop=True)
     df["_nama"] = raw.iloc[17:, 14].reset_index(drop=True)
+    df["_paduan_oat"] = raw.iloc[17:, 42].reset_index(drop=True).astype(object)
 
     return df
 
@@ -158,8 +168,15 @@ def save_gowa_data(source: str = DEFAULT_SOURCE, output: str = DEFAULT_OUTPUT) -
     return df
 
 
-def cohort_profile(df: pd.DataFrame) -> dict:
-    """Profil kohort Gowa untuk laporan external validation."""
+def cohort_profile(df: pd.DataFrame, features: list = None) -> dict:
+    """Profil kohort Gowa untuk laporan external validation.
+
+    features: daftar fitur yang dipakai validasi eksternal. Default GOWA_FEATURES
+    (register TBC.03). Bila data eksternal disusun dalam format model produksi web,
+    panggil dengan EXTERNAL_FEATURES (9 fitur).
+    """
+    if features is None:
+        features = GOWA_FEATURES
     total = len(df)
     outcome = df["Keberhasilan Pengobatan"].dropna()
     missing_outcome = int(total - len(outcome))
@@ -167,7 +184,7 @@ def cohort_profile(df: pd.DataFrame) -> dict:
     failure = int((outcome == 1).sum())
 
     missing_profile = {}
-    for col in GOWA_FEATURES:
+    for col in features:
         n_miss = int(df[col].isna().sum().item())
         if n_miss > 0:
             missing_profile[col] = {
@@ -176,7 +193,7 @@ def cohort_profile(df: pd.DataFrame) -> dict:
             }
 
     return {
-        "period": "Januari 2023 - Desember 2025",
+        "period": "Januari 2024 - Agustus 2026",
         "site": "Kab. Gowa, Sulawesi Selatan",
         "source_register": "Register TBC.03 RO Fasyankes (SITB)",
         "sample_size": total,
@@ -186,13 +203,15 @@ def cohort_profile(df: pd.DataFrame) -> dict:
         "missing_profile": missing_profile,
         "inclusion_criteria": (
             "Pasien TBC RO yang tercatat dalam register TBC.03 Fasyankes Kab. Gowa "
-            "pada periode Januari 2023 - Desember 2025 dengan data hasil pengobatan lengkap."
+            "pada periode Januari 2024 - Agustus 2026 dengan data hasil pengobatan lengkap "
+            "dan bukan pasien dengan paduan monoresistan INH."
         ),
         "exclusion_criteria": (
-            "Pasien yang masih dalam pengobatan / belum memiliki hasil akhir pada saat ekstraksi "
-            "serta data dengan nilai fitur (Riwayat DM) tidak diketahui."
+            "Pasien yang masih dalam pengobatan / belum memiliki hasil akhir pada saat ekstraksi, "
+            "pasien dengan paduan monoresistan INH (bukan TBC RO), serta data dengan nilai fitur "
+            "(Riwayat DM) tidak diketahui."
         ),
-        "features": GOWA_FEATURES,
+        "features": features,
     }
 
 

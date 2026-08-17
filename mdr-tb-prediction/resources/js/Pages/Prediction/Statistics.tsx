@@ -1236,7 +1236,7 @@ export default function Statistics({ statistics, curves, interpretability, exter
                                             <Tooltip formatter={(value: any) => Number(value).toFixed(4)} />
                                             <Legend />
                                             <Line data={[{ fpr: 0, tpr: 0 }, { fpr: 1, tpr: 1 }]} dataKey="tpr" name="Random (AUC=0.50)" stroke="#d1d5db" strokeDasharray="5 5" dot={false} />
-                                            <Line data={externalValidation.external_roc.fpr.map((fpr: number, i: number) => ({ fpr, tpr: externalValidation.external_roc!.tpr[i] }))} dataKey="tpr" name="External SVM (5 fitur)" stroke="#10b981" dot={false} strokeWidth={2} />
+                                            <Line data={externalValidation.external_roc.fpr.map((fpr: number, i: number) => ({ fpr, tpr: externalValidation.external_roc!.tpr[i] }))} dataKey="tpr" name="External SVM (9 fitur)" stroke="#10b981" dot={false} strokeWidth={2} />
                                         </LineChart>
                                     </ResponsiveContainer>
                                 </div>
