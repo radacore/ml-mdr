@@ -296,8 +296,8 @@ export default function Show({ prediction, factorContributions }: Props) {
                                                 dataKey="value"
                                                 stroke="none"
                                             >
-                                                {probabilityData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                                {probabilityData.map((entry) => (
+                                                    <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                                                 ))}
                                             </Pie>
                                             <Tooltip formatter={(value: number | undefined) => `${(value ?? 0).toFixed(1)}%`} />
@@ -338,298 +338,6 @@ export default function Show({ prediction, factorContributions }: Props) {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {hasDetailCalc && factorContributions && (
-                                <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                        📐 Rincian Angka Perhitungan (Logistic Regression)
-                                    </h4>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Nilai dirumuskan pasien diubah jadi skor standar
-                                        <InlineMath math="z_i = \frac{x_i - \mu_i}{\sigma_i}" />, lalu di jumlah terkali koefisien model
-                                        <InlineMath math="\beta_i" />. Total <InlineMath math="z" /> dipasang ke fungsi sigmoid hingga menjadi persentase.
-                                    </p>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
-                                            <thead>
-                                                <tr className="bg-slate-100 dark:bg-slate-800">
-                                                    <th className="border p-2 text-left">Fitur</th>
-                                                    <th className="border p-2 text-left">Nilai (<InlineMath math="x_i" />)</th>
-                                                    <th className="border p-2 text-center">Nilai z</th>
-                                                    <th className="border p-2 text-center">Koefisien (<InlineMath math="\beta" />)</th>
-                                                    <th className="border p-2 text-center"><InlineMath math="\beta \cdot z" /></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {factorContributions.features.map((f) => (
-                                                    <tr key={f.feature} className="odd:bg-slate-50 dark:odd:bg-slate-800/50">
-                                                        <td className="border p-2 text-left font-medium">{f.feature}</td>
-                                                        <td className="border p-2 text-left">{featValueLabel(f)}</td>
-                                                        <td className="border p-2 font-mono">{fmtNum(f.scaled_value)}</td>
-                                                        <td className="border p-2 font-mono">{fmtNum(f.coefficient)}</td>
-                                                        <td className="border p-2 font-mono">{fmtNum(f.contribution_raw)}</td>
-                                                    </tr>
-                                                ))}
-                                                <tr className="bg-slate-100 dark:bg-slate-800 font-semibold">
-                                                    <td className="border p-2" colSpan={4}>
-                                                        Total logit mentah{' '}
-                                                        <InlineMath
-                                                            math={`z = ${fmtNum(factorContributions.intercept)} ${factorContributions.features.map(f => signedNum(f.contribution_raw)).join(' ')}`}
-                                                        />
-                                                    </td>
-                                                    <td className="border p-2 text-center">{fmtNum(factorContributions.z_raw)}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-3">
-                                        <div className="space-y-1">
-                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">① Jumlahkan logit mentah</p>
-                                            <p>
-                                                z = β₀ + Σ(βᵢ·zᵢ) = {fmtNum(factorContributions.intercept)}{factorContributions.features.map(f => signedNum(f.contribution_raw)).join('')}
-                                            </p>
-                                            <p className="pl-1">
-                                                z = {fmtNum(zRaw)}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">② Ubah orientasi ke kelas «Berhasil»</p>
-                                            <p>
-                                                Kelas «Berhasil» berada di sisi negatif logit mentah, sehingga:
-                                            </p>
-                                            <p className="pl-1">
-                                                z<sub>Berhasil</sub> = −z = −({fmtNum(zRaw)}) = {fmtNum(zFinal)}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">③ Fungsi sigmoid → probabilitas</p>
-                                            <p className="pl-1">a) P(Berhasil) = 1 / (1 + e<sup>−z<sub>Berhasil</sub></sup>)</p>
-                                            <p className="pl-1">
-                                                b) e<sup>−z<sub>Berhasil</sub></sup> = e<sup>{fmtNum(zFinal !== undefined ? -zFinal : 0)}</sup> = {fmtNum(expNegZB)}
-                                            </p>
-                                            <p className="pl-1">
-                                                c) P(Berhasil) = 1 / (1 + {fmtNum(expNegZB)}) = 1 / {fmtNum(denom)} ≈ {fmtNum(invDenom)}
-                                            </p>
-                                            <p className="pl-1 font-bold text-green-600">
-                                                d) P(Berhasil) = {factorContributions.probability.toFixed(2)}%
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <p className="text-[11px] text-slate-400">
-                                        * z = (x−μ)/σ adalah standardisasi; μ &amp; σ diambil dari data latih. Nilai dapat dibulatkan sehingga
-                                        penjumlahan manual bisa sedikit berbeda dari hasil model.
-                                    </p>
-                                    <p className="text-[11px] text-slate-400">
-                                        * <strong>Ket.Usia</strong> adalah umur pasien dalam tahun (variabel numerik), bukan kode berlabel.
-                                        Itulah sebabnya kolom "Nilai (x)" menampilkan angka umur (mis. 29 tahun), sementara fitur lain
-                                        menampilkan kode 0/1 karena bersifat kategorikal.
-                                    </p>
-                                </div>
-                            )}
-                            {hasDTCalc && (
-                                <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                        🌳 Rincian Angka Perhitungan (Decision Tree)
-                                    </h4>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Pasien menelusuri satu jalur dari <em>root</em> ke <em>leaf</em>. Ambang split &amp; nilai fitur
-                                        ditampilkan dalam skala z (hasil <InlineMath math="StandardScaler" />). Di simpul daun,
-                                        probabilitas prediksi diambil dari komposisi kelas sampel latih.
-                                    </p>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
-                                            <thead>
-                                                <tr className="bg-slate-100 dark:bg-slate-800">
-                                                    <th className="border p-2 text-left">Node</th>
-                                                    <th className="border p-2 text-left">Aturan (fitur ≤ ambang)</th>
-                                                    <th className="border p-2 text-center">Nilai z</th>
-                                                    <th className="border p-2 text-center">Gini</th>
-                                                    <th className="border p-2 text-center">Sampel</th>
-                                                    <th className="border p-2 text-center">Berhasil / Tidak</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {dtPath?.map((n) => (
-                                                    n.leaf ? (
-                                                        <tr key={`leaf-${n.node}`} className="bg-emerald-50 dark:bg-emerald-950/40 font-semibold">
-                                                            <td className="border p-2">{n.node} (daun)</td>
-                                                            <td className="border p-2" colSpan={3}>Leaf node</td>
-                                                            <td className="border p-2 text-center">{n.samples}</td>
-                                                            <td className="border p-2 text-center">
-                                                                {(n.class_fraction[0] * 100).toFixed(1)}% / {(n.class_fraction[1] * 100).toFixed(1)}%
-                                                            </td>
-                                                        </tr>
-                                                    ) : (
-                                                        <tr key={`split-${n.node}`}>
-                                                            <td className="border p-2">{n.node}</td>
-                                                            <td className="border p-2">{n.feature} ≤ {fmtNum(n.threshold)}</td>
-                                                            <td className="border p-2 text-center font-mono">{fmtNum(n.scaled_value)}</td>
-                                                            <td className="border p-2 text-center font-mono">{fmtNum(n.gini)}</td>
-                                                            <td className="border p-2 text-center">{n.samples}</td>
-                                                            <td className="border p-2 text-center">
-                                                                {(n.class_fraction[0] * 100).toFixed(1)}% / {(n.class_fraction[1] * 100).toFixed(1)}%
-                                                            </td>
-                                                        </tr>
-                                                    )
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    {dtLeaf && (
-                                        <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg text-xs font-mono space-y-1">
-                                            <p>
-                                                P(Berhasil) = {dtLeaf.class_count[0]}/{dtLeaf.samples} ≈ {(dtLeaf.class_fraction[0] * 100).toFixed(2)}%
-                                            </p>
-                                            <p className="text-slate-400">
-                                                * Sampel dihitung dengan bobot <InlineMath>class_weight="balanced"</InlineMath>.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {hasSVMCc && (
-                                <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
-                                    <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                                        🎯 Rincian Angka Perhitungan (Support Vector Machine)
-                                    </h4>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                        Nilai keputusan <InlineMath math="f(x)" /> dihitung dari bobot support vector pada kernel RBF,
-                                        lalu dikonversi ke probabilitas melalui <em>Platt scaling</em>.
-                                    </p>
-                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-1.5">
-                                        <p>
-                                            ① <InlineMath math="f(x) = \sum_i \alpha_i y_i K(x_i, x) + \rho" /> = {fmtNum(svmF, 6)}
-                                        </p>
-                                        <p className="pl-4">
-                                            bias <InlineMath math="\rho" /> = {fmtNum(svmFC.rho)} · jumlah SV = {svmFC.n_support || '—'}
-                                        </p>
-                                        <p className="pl-4">
-                                            kernel RBF <InlineMath math="K(x_i,x) = e^{-\gamma \|x_i - x\|^2}" /> dengan <InlineMath math="\gamma = 1/7 \approx" /> {fmtNum(svmFC.gamma)}
-                                        </p>
-                                        <p>
-                                            ② Platt scaling: <InlineMath math="P(\text{Berhasil}) = \frac{1}{1+e^{-(A f(x) + B)}}" />
-                                        </p>
-                                        <p className="pl-4">
-                                            A = {fmtNum(svmA)} · B = {fmtNum(svmB)} → A·f(x) + B = {fmtNum(svmExp)}
-                                        </p>
-                                        <p className="pl-4">
-                                            P(Berhasil) = 1/(1 + e<sup>−({fmtNum(svmExp)})</sup>) = {fmtNum(svmProb)} ≈ {(svmProb * 100).toFixed(2)}%
-                                        </p>
-                                    </div>
-                                    {svmFC.top_sv && svmFC.top_sv.length > 0 && (
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                                                Top-5 Support Vector (kontribusi terbesar ke {<InlineMath math="f(x)" />}):
-                                            </p>
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
-                                                    <thead>
-                                                        <tr className="bg-slate-100 dark:bg-slate-800">
-                                                            <th className="border p-2 text-left">#</th>
-                                                            <th className="border p-2 text-center">α</th>
-                                                            <th className="border p-2 text-center">K(x,xᵢ)</th>
-                                                            <th className="border p-2 text-center">α·K</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {svmFC.top_sv.map((s) => (
-                                                            <tr key={`sv-${s.index}`}>
-                                                                <td className="border p-2">{s.index + 1}</td>
-                                                                <td className="border p-2 text-center font-mono">{fmtNum(s.dual)}</td>
-                                                                <td className="border p-2 text-center font-mono">{fmtNum(s.kernel)}</td>
-                                                                <td className="border p-2 text-center font-mono">{fmtNum(s.contribution)}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {svmFC.shap?.features && svmFC.shap.features.length > 0 && (
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                                                Atribusi SHAP per fitur (KernelExplainer — exact SHAP, 2^M koalisi):
-                                            </p>
-                                            {svmFC.shap.base_value != null && (
-                                                <p className="text-[11px] text-slate-400">
-                                                    Baseline P(Berhasil) = {fmtNum(svmFC.shap.base_value * 100, 2)}% · background: {svmFC.shap.background ?? '—'}
-                                                </p>
-                                            )}
-                                            {svmFC.shap.base_value != null && (
-                                                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-1">
-                                                    <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">
-                                                        Waterfall kontribusi (persen):
-                                                    </p>
-                                                    {(() => {
-                                                        const targetPct = prediction.probabilities?.Berhasil ?? 0;
-                                                        const base = svmFC.shap.base_value ?? 0;
-                                                        const sumPhi = svmFC.shap.features.reduce((s, f) => s + f.shap_value, 0);
-                                                        const activePct = (base + sumPhi) * 100;
-                                                        const scale = sumPhi !== 0 ? (targetPct / 100 - base) / sumPhi : 1;
-                                                        const scaledPhi = svmFC.shap.features.map(f => ({ ...f, shap_value: f.shap_value * scale }));
-                                                        let cum = base;
-                                                        return (
-                                                            <>
-                                                                <p className="pl-2">
-                                                                    P(Berhasil) baseline = {fmtNum(base * 100, 2)}%
-                                                                </p>
-                                                                {scaledPhi.map((sf) => {
-                                                                    const prev = cum;
-                                                                    cum += sf.shap_value;
-                                                                    const dp = (cum - prev) * 100;
-                                                                    return (
-                                                                        <p key={`wf-${sf.feature}`} className="pl-2">
-                                                                            <span className={dp >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                                                {dp >= 0 ? '+' : ''}{fmtNum(dp, 2)}%
-                                                                            </span>{' '}
-                                                                            {sf.feature}
-                                                                        </p>
-                                                                    );
-                                                                })}
-                                                                <p className="pl-2 border-t border-slate-300 pt-1 font-bold">
-                                                                    Total P(Berhasil) = {fmtNum(base * 100 + scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100, 2)}%
-                                                                </p>
-                                                                <p className="pl-2 text-slate-400">
-                                                                    ≈ {fmtNum(base * 100, 2)}% + {scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100 >= 0 ? '+' : ''}{fmtNum(scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100, 2)}% = {fmtNum(base * 100 + scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100, 2)}%
-                                                                </p>
-                                                                {Math.abs(activePct - targetPct) > 0.05 && (
-                                                                    <p className="pl-2 text-slate-400">
-                                                                        * Kontribusi dikalibrasi terhadap probabilitas tersimpan prediksi
-                                                                        (model aktif memberi {fmtNum(activePct, 2)}%).
-                                                                    </p>
-                                                                )}
-                                                            </>
-                                                        );
-                                                    })()}
-                                                </div>
-                                            )}
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
-                                                    <thead>
-                                                        <tr className="bg-slate-100 dark:bg-slate-800">
-                                                            <th className="border p-2 text-left">Fitur</th>
-                                                            <th className="border p-2 text-center">Nilai (x)</th>
-                                                            <th className="border p-2 text-center">z</th>
-                                                            <th className="border p-2 text-center">SHAP value (φ)</th>
-                                                            <th className="border p-2 text-center">|φ|</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {svmFC.shap.features.map((sf) => (
-                                                            <tr key={sf.feature} className="odd:bg-slate-50 dark:odd:bg-slate-800/50">
-                                                                <td className="border p-2 text-left font-medium">{sf.feature}</td>
-                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.raw_value)}</td>
-                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.scaled_value)}</td>
-                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.shap_value)}</td>
-                                                                <td className="border p-2 text-center font-mono">{fmtNum(sf.shap_mean_abs)}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                             {isSuccess ? (
                                 <>
                                     <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-green-200">
@@ -703,6 +411,367 @@ export default function Show({ prediction, factorContributions }: Props) {
                     </Card>
                 </div>
 
+
+                {/* Analisis Kontribusi Fitur & Rincian Angka Perhitungan */}
+                <Card className="overflow-hidden">
+                    <details className="group" open>
+                        <summary className="flex cursor-pointer items-center justify-between p-6 m-0 font-semibold list-none [&::-webkit-details-marker]:hidden hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                            <div className="flex items-center gap-2">
+                                🔍 Analisis Kontribusi Fitur & Rincian Angka
+                            </div>
+                            <div className="transition-transform duration-300 group-open:rotate-180">
+                                <ChevronDown className="h-5 w-5 text-gray-500" />
+                            </div>
+                        </summary>
+                        <CardContent className="pt-0 border-t mt-2 space-y-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Rincian bagaimana model menentukan hasil prediksi untuk pasien ini — nilai, bobot, dan kontribusi tiap fitur.
+                            </p>
+                                {hasDetailCalc && factorContributions && (
+                                    <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
+                                        <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                            📐 Rincian Angka Perhitungan (Logistic Regression)
+                                        </h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            Nilai dirumuskan pasien diubah jadi skor standar
+                                            <InlineMath math="z_i = \frac{x_i - \mu_i}{\sigma_i}" />, lalu di jumlah terkali koefisien model
+                                            <InlineMath math="\beta_i" />. Total <InlineMath math="z" /> dipasang ke fungsi sigmoid hingga menjadi persentase.
+                                        </p>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
+                                                <thead>
+                                                    <tr className="bg-slate-100 dark:bg-slate-800">
+                                                        <th className="border p-2 text-left">Fitur</th>
+                                                        <th className="border p-2 text-left">Nilai (<InlineMath math="x_i" />)</th>
+                                                        <th className="border p-2 text-center">Nilai z</th>
+                                                        <th className="border p-2 text-center">Koefisien (<InlineMath math="\beta" />)</th>
+                                                        <th className="border p-2 text-center"><InlineMath math="\beta \cdot z" /></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {factorContributions.features.map((f) => (
+                                                        <tr key={f.feature} className="odd:bg-slate-50 dark:odd:bg-slate-800/50">
+                                                            <td className="border p-2 text-left font-medium">{f.feature}</td>
+                                                            <td className="border p-2 text-left">{featValueLabel(f)}</td>
+                                                            <td className="border p-2 font-mono">{fmtNum(f.scaled_value)}</td>
+                                                            <td className="border p-2 font-mono">{fmtNum(f.coefficient)}</td>
+                                                            <td className="border p-2 font-mono">{fmtNum(f.contribution_raw)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    <tr className="bg-slate-100 dark:bg-slate-800 font-semibold">
+                                                        <td className="border p-2" colSpan={4}>
+                                                            Total logit mentah{' '}
+                                                            <InlineMath
+                                                                math={`z = ${fmtNum(factorContributions.intercept)} ${factorContributions.features.map(f => signedNum(f.contribution_raw)).join(' ')}`}
+                                                            />
+                                                        </td>
+                                                        <td className="border p-2 text-center">{fmtNum(factorContributions.z_raw)}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-3">
+                                            <div className="space-y-1">
+                                                <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">① Jumlahkan logit mentah</p>
+                                                <p>
+                                                    z = β₀ + Σ(βᵢ·zᵢ) = {fmtNum(factorContributions.intercept)}{factorContributions.features.map(f => signedNum(f.contribution_raw)).join('')}
+                                                </p>
+                                                <p className="pl-1">
+                                                    z = {fmtNum(zRaw)}
+                                                </p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">② Ubah orientasi ke kelas «Berhasil»</p>
+                                                <p>
+                                                    Kelas «Berhasil» berada di sisi negatif logit mentah, sehingga:
+                                                </p>
+                                                <p className="pl-1">
+                                                    z<sub>Berhasil</sub> = −z = −({fmtNum(zRaw)}) = {fmtNum(zFinal)}
+                                                </p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">③ Fungsi sigmoid → probabilitas</p>
+                                                <p className="pl-1">a) P(Berhasil) = 1 / (1 + e<sup>−z<sub>Berhasil</sub></sup>)</p>
+                                                <p className="pl-1">
+                                                    b) e<sup>−z<sub>Berhasil</sub></sup> = e<sup>{fmtNum(zFinal !== undefined ? -zFinal : 0)}</sup> = {fmtNum(expNegZB)}
+                                                </p>
+                                                <p className="pl-1">
+                                                    c) P(Berhasil) = 1 / (1 + {fmtNum(expNegZB)}) = 1 / {fmtNum(denom)} ≈ {fmtNum(invDenom)}
+                                                </p>
+                                                <p className="pl-1 font-bold text-green-600">
+                                                    d) P(Berhasil) = {factorContributions.probability.toFixed(2)}%
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400">
+                                            * z = (x−μ)/σ adalah standardisasi; μ &amp; σ diambil dari data latih. Nilai dapat dibulatkan sehingga
+                                            penjumlahan manual bisa sedikit berbeda dari hasil model.
+                                        </p>
+                                        <p className="text-[11px] text-slate-400">
+                                            * <strong>Ket.Usia</strong> adalah umur pasien dalam tahun (variabel numerik), bukan kode berlabel.
+                                            Itulah sebabnya kolom "Nilai (x)" menampilkan angka umur (mis. 29 tahun), sementara fitur lain
+                                            menampilkan kode 0/1 karena bersifat kategorikal.
+                                        </p>
+                                    </div>
+                                )}
+                                {hasDTCalc && (
+                                    <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
+                                        <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                            🌳 Rincian Angka Perhitungan (Decision Tree)
+                                        </h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            Pasien menelusuri satu jalur dari <em>root</em> ke <em>leaf</em>. Ambang split &amp; nilai fitur
+                                            ditampilkan dalam skala z (hasil <InlineMath math="StandardScaler" />). Di simpul daun,
+                                            probabilitas prediksi diambil dari komposisi kelas sampel latih.
+                                        </p>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
+                                                <thead>
+                                                    <tr className="bg-slate-100 dark:bg-slate-800">
+                                                        <th className="border p-2 text-left">Node</th>
+                                                        <th className="border p-2 text-left">Aturan (fitur ≤ ambang)</th>
+                                                        <th className="border p-2 text-center">Nilai z</th>
+                                                        <th className="border p-2 text-center">Gini</th>
+                                                        <th className="border p-2 text-center">Sampel</th>
+                                                        <th className="border p-2 text-center">Berhasil / Tidak</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {dtPath?.map((n) => (
+                                                        n.leaf ? (
+                                                            <tr key={`leaf-${n.node}`} className="bg-emerald-50 dark:bg-emerald-950/40 font-semibold">
+                                                                <td className="border p-2">{n.node} (daun)</td>
+                                                                <td className="border p-2" colSpan={3}>Leaf node</td>
+                                                                <td className="border p-2 text-center">{n.samples}</td>
+                                                                <td className="border p-2 text-center">
+                                                                    {(n.class_fraction[0] * 100).toFixed(1)}% / {(n.class_fraction[1] * 100).toFixed(1)}%
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            <tr key={`split-${n.node}`}>
+                                                                <td className="border p-2">{n.node}</td>
+                                                                <td className="border p-2">{n.feature} ≤ {fmtNum(n.threshold)}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(n.scaled_value)}</td>
+                                                                <td className="border p-2 text-center font-mono">{fmtNum(n.gini)}</td>
+                                                                <td className="border p-2 text-center">{n.samples}</td>
+                                                                <td className="border p-2 text-center">
+                                                                    {(n.class_fraction[0] * 100).toFixed(1)}% / {(n.class_fraction[1] * 100).toFixed(1)}%
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {dtLeaf && (
+                                            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg text-xs font-mono space-y-1">
+                                                <p>
+                                                    P(Berhasil) = {dtLeaf.class_count[0]}/{dtLeaf.samples} ≈ {(dtLeaf.class_fraction[0] * 100).toFixed(2)}%
+                                                </p>
+                                                <p className="text-slate-400">
+                                                    * Sampel dihitung dengan bobot <InlineMath>class_weight="balanced"</InlineMath>.
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                {hasSVMCc && (
+                                    <div className="p-4 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 space-y-3">
+                                        <h4 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                            🎯 Rincian Angka Perhitungan (Support Vector Machine)
+                                        </h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                                            Nilai keputusan <InlineMath math="f(x)" /> dihitung dari bobot support vector pada kernel RBF,
+                                            lalu dikonversi ke probabilitas melalui <em>Platt scaling</em>.
+                                        </p>
+                                        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-3">
+                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">① Fungsi keputusan f(x)</p>
+                                            <div className="space-y-1 pl-2">
+                                                <p>
+                                                    <InlineMath math="f(x) = \sum_i \alpha_i y_i K(x_i, x) + \rho" />
+                                                </p>
+                                                <p>
+                                                    Σ αᵢyᵢK(xᵢ,x) = f(x) − ρ = {fmtNum(svmF, 6)} − {fmtNum(svmFC.rho, 4)} = <span className="font-bold">{fmtNum(svmF - (svmFC.rho ?? 0), 6)}</span>
+                                                </p>
+                                                <p>
+                                                    ρ (bias) = {fmtNum(svmFC.rho, 4)} · jumlah SV = {svmFC.n_support || '—'}
+                                                </p>
+                                                <p>
+                                                    f(x) = {fmtNum(svmF - (svmFC.rho ?? 0), 6)} + {fmtNum(svmFC.rho, 4)} = <span className="font-bold">{fmtNum(svmF, 6)}</span>
+                                                </p>
+                                                <p className="text-slate-400">
+                                                    f(x) negatif → pasien berada di sisi negatif hyperplane (arah kelas «Tidak Berhasil»); namun probabilitas final ditentukan Platt scaling di bawah.
+                                                </p>
+                                            </div>
+                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200 pt-1">② Kernel RBF</p>
+                                            <div className="space-y-1 pl-2">
+                                                <p>
+                                                    <InlineMath math="K(x_i,x) = e^{-\gamma \|x_i - x\|^2}" /> dengan <InlineMath math="\gamma = 1/7 \approx" /> {fmtNum(svmFC.gamma, 4)}
+                                                </p>
+                                                <p className="text-slate-400">
+                                                    Mengukur kemiripan pasien ini (x) dengan tiap pasien masa lalu (xᵢ): makin dekat jaraknya, makin besar K → makin besar kontribusinya ke f(x).
+                                                </p>
+                                            </div>
+                                            <p className="font-sans font-semibold text-slate-600 dark:text-slate-200 pt-1">③ Platt scaling → probabilitas</p>
+                                            <div className="space-y-1 pl-2">
+                                                <p>
+                                                    <InlineMath math="P(\text{Berhasil}) = \frac{1}{1 + e^{\,B - A\,f(x)}}" />
+                                                </p>
+                                                <p>
+                                                    A = {fmtNum(svmA, 4)} · B = {fmtNum(svmB, 4)}
+                                                </p>
+                                                <p>
+                                                    A·f(x) = {fmtNum(svmA, 4)} · ({fmtNum(svmF, 6)}) = {fmtNum(svmA * svmF, 6)}
+                                                </p>
+                                                <p>
+                                                    B − A·f(x) = {fmtNum(svmB, 4)} − {fmtNum(svmA * svmF, 6)} = <span className="font-bold">{fmtNum(svmExp, 6)}</span>
+                                                </p>
+                                                <p>
+                                                    e<sup>{fmtNum(svmExp, 4)}</sup> = {fmtNum(Math.exp(svmExp), 6)}
+                                                </p>
+                                                <p>
+                                                    P(Berhasil) = 1 / (1 + {fmtNum(Math.exp(svmExp), 6)}) = <span className="font-bold text-green-600">{fmtNum(svmProb, 4)} ≈ {(svmProb * 100).toFixed(2)}%</span>
+                                                </p>
+                                                <p>
+                                                    P(Tidak Berhasil) = 1 − {fmtNum(svmProb, 4)} = {(1 - svmProb) * 100 < 0 ? '0.00' : ((1 - svmProb) * 100).toFixed(2)}%
+                                                </p>
+                                            </div>
+                                            {svmFC.shap?.features && svmFC.shap.features.length > 0 && svmFC.shap.base_value != null && (
+                                                <div className="space-y-1 pt-1">
+                                                    <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">④ Menuju Baseline & Waterfall (SHAP)</p>
+                                                    <div className="space-y-1 pl-2">
+                                                        <p>
+                                                            SHAP memecah P(Berhasil) menjadi <span className="font-bold">baseline + Σ kontribusi fitur (φ)</span>.
+                                                        </p>
+                                                        <p>
+                                                            Baseline = {fmtNum(svmFC.shap.base_value * 100, 2)}% → rata-rata P(Berhasil) model pada data background ({svmFC.shap.background ?? '—'}).
+                                                        </p>
+                                                        {(() => {
+                                                            const targetPct = prediction.probabilities?.Berhasil ?? 0;
+                                                            const sumPhi = svmFC.shap.features.reduce((s, f) => s + f.shap_value, 0);
+                                                            const activePct = (svmFC.shap.base_value + sumPhi) * 100;
+                                                            return (
+                                                                <>
+                                                                    <p>
+                                                                        Baseline + Σ φ = {fmtNum(svmFC.shap.base_value * 100, 2)}% + {sumPhi * 100 >= 0 ? '+' : ''}{fmtNum(sumPhi * 100, 2)}% = <span className="font-bold">{fmtNum(activePct, 2)}%</span> (model aktif).
+                                                                    </p>
+                                                                    {targetPct > 0 && Math.abs(activePct - targetPct) > 0.05 && (
+                                                                        <p className="text-slate-400">
+                                                                            Karena prediksi tersimpan ({targetPct.toFixed(2)}%) dihitung model sebelum dilatih ulang, kontribusi di bawah dikalibrasi agar total waterfall pas {targetPct.toFixed(2)}%.
+                                                                        </p>
+                                                                    )}
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {svmFC.shap?.features && svmFC.shap.features.length > 0 && (
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                                    Atribusi SHAP per fitur (KernelExplainer — exact SHAP, 2^M koalisi):
+                                                </p>
+                                                {svmFC.shap.base_value != null && (
+                                                    <p className="text-[11px] text-slate-400">
+                                                        Baseline P(Berhasil) = {fmtNum(svmFC.shap.base_value * 100, 2)}% · background: {svmFC.shap.background ?? '—'}
+                                                    </p>
+                                                )}
+                                                {svmFC.shap.base_value != null && (
+                                                    <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-1">
+                                                        <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">
+                                                            Waterfall kontribusi (persen):
+                                                        </p>
+                                                        {(() => {
+                                                            const targetPct = prediction.probabilities?.Berhasil ?? 0;
+                                                            const base = svmFC.shap.base_value ?? 0;
+                                                            const sumPhi = svmFC.shap.features.reduce((s, f) => s + f.shap_value, 0);
+                                                            const activePct = (base + sumPhi) * 100;
+                                                            const scale = sumPhi !== 0 ? (targetPct / 100 - base) / sumPhi : 1;
+                                                            const scaledPhi = svmFC.shap.features.map(f => ({ ...f, shap_value: f.shap_value * scale }));
+                                                            const maxAbs = Math.max(...scaledPhi.map(f => Math.abs(f.shap_value) * 100), 0.0001);
+                                                            const totalPct = base * 100 + scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100;
+                                                            return (
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="w-44 shrink-0 text-right text-slate-400 pr-2">Baseline</span>
+                                                                        <div className="flex-1 h-5 rounded bg-slate-200 dark:bg-slate-700 px-2 flex items-center justify-end min-w-[70px]">
+                                                                            <span className="text-slate-600 dark:text-slate-300">{fmtNum(base * 100, 2)}%</span>
+                                                                        </div>
+                                                                        <span className="w-16 shrink-0 text-left pl-1">{fmtNum(base * 100, 2)}%</span>
+                                                                    </div>
+                                                                    {scaledPhi.map((sf) => {
+                                                                        const dp = sf.shap_value * 100;
+                                                                        const width = Math.max(4, Math.min(100, (Math.abs(dp) / maxAbs) * 100));
+                                                                        return (
+                                                                            <div key={`wf-${sf.feature}`} className="flex items-center gap-2">
+                                                                                <span className="w-44 shrink-0 text-right pr-2 truncate text-slate-600 dark:text-slate-300" title={sf.feature}>{sf.feature}</span>
+                                                                                <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-gray-800">
+                                                                                    <div
+                                                                                        className={`h-5 rounded flex items-center px-1.5 text-[10px] font-bold text-white ${dp >= 0 ? 'bg-green-500 justify-start' : 'bg-red-500 justify-end'}`}
+                                                                                        style={{ width: `${width}%` }}
+                                                                                    >
+                                                                                        {dp >= 0 ? '+' : ''}{fmtNum(dp, 2)}%
+                                                                                    </div>
+                                                                                </div>
+                                                                                <span className={`w-16 shrink-0 text-left pl-1 font-mono ${dp >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                    {dp >= 0 ? '+' : ''}{fmtNum(dp, 2)}%
+                                                                                </span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                    <div className="flex items-center gap-2 border-t border-slate-300 pt-1">
+                                                                        <span className="w-44 shrink-0 text-right pr-2 text-slate-600 dark:text-slate-300 font-semibold">Total</span>
+                                                                        <div className="flex-1 h-6 rounded bg-slate-700 dark:bg-slate-300 px-2 flex items-center justify-end min-w-[70px]">
+                                                                            <span className="text-white dark:text-slate-800 font-bold">{fmtNum(totalPct, 2)}%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <p className="text-[11px] text-slate-400 pt-1">
+                                                                        ≈ {fmtNum(base * 100, 2)}% {scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100 >= 0 ? '+' : ''}{fmtNum(scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100, 2)}%
+                                                                    </p>
+                                                                    {Math.abs(activePct - targetPct) > 0.05 && (
+                                                                        <p className="text-[11px] text-slate-400">
+                                                                            * Kontribusi dikalibrasi terhadap probabilitas tersimpan prediksi
+                                                                            (model aktif memberi {fmtNum(activePct, 2)}%).
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                )}
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
+                                                        <thead>
+                                                            <tr className="bg-slate-100 dark:bg-slate-800">
+                                                                <th className="border p-2 text-left">Fitur</th>
+                                                                <th className="border p-2 text-center">Nilai (x)</th>
+                                                                <th className="border p-2 text-center">z</th>
+                                                                <th className="border p-2 text-center">SHAP value (φ)</th>
+                                                                <th className="border p-2 text-center">|φ|</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {svmFC.shap.features.map((sf) => (
+                                                                <tr key={sf.feature} className="odd:bg-slate-50 dark:odd:bg-slate-800/50">
+                                                                    <td className="border p-2 text-left font-medium">{sf.feature}</td>
+                                                                    <td className="border p-2 text-center font-mono">{fmtNum(sf.raw_value)}</td>
+                                                                    <td className="border p-2 text-center font-mono">{fmtNum(sf.scaled_value)}</td>
+                                                                    <td className="border p-2 text-center font-mono">{fmtNum(sf.shap_value)}</td>
+                                                                    <td className="border p-2 text-center font-mono">{fmtNum(sf.shap_mean_abs)}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                        </CardContent>
+                    </details>
+                </Card>
+
                 {/* Data Pasien */}
                 <Card className="overflow-hidden">
                     <details className="group">
@@ -745,11 +814,17 @@ export default function Show({ prediction, factorContributions }: Props) {
                     <CardContent className="space-y-8">
 
                         {/* Step 1: Preprocessing - Label Encoding */}
-                        <div className="space-y-4">
-                            <h4 className="font-semibold text-lg border-b pb-2 flex items-center gap-2">
-                                <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
-                                Preprocessing: Label Encoding
-                            </h4>
+                        <details className="group border rounded-lg overflow-hidden" open>
+                            <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold list-none [&::-webkit-details-marker]:hidden hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                                <span className="flex items-center gap-2 text-lg">
+                                    <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                                    Preprocessing: Label Encoding
+                                </span>
+                                <span className="transition-transform duration-300 group-open:rotate-180">
+                                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                                </span>
+                            </summary>
+                            <div className="p-4 pt-2 space-y-4">
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                 Data kategorikal dikonversi menjadi nilai numerik menggunakan Label Encoding.
                                 Setiap kategori unik diberi nilai integer.
@@ -767,7 +842,7 @@ export default function Show({ prediction, factorContributions }: Props) {
                                     </thead>
                                     <tbody>
                                         {encodedFeatures.map((feature, idx) => (
-                                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}>
+                                            <tr key={feature.name} className={idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}>
                                                 <td className="border p-2 font-medium">{feature.name}</td>
                                                 <td className="border p-2 text-purple-600 dark:text-purple-400">{feature.original}</td>
                                                 <td className="border p-2 text-center">→</td>
@@ -779,24 +854,43 @@ export default function Show({ prediction, factorContributions }: Props) {
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
+                            </div>
+                        </details>
 
                         {/* Step 2: Feature Vector */}
-                        <div className="space-y-4">
-                            <h4 className="font-semibold text-lg border-b pb-2 flex items-center gap-2">
-                                <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
-                                Pembentukan Feature Vector
-                            </h4>
+                        <details className="group border rounded-lg overflow-hidden">
+                            <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold list-none [&::-webkit-details-marker]:hidden hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                                <span className="flex items-center gap-2 text-lg">
+                                    <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                                    Pembentukan Feature Vector
+                                </span>
+                                <span className="transition-transform duration-300 group-open:rotate-180">
+                                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                                </span>
+                            </summary>
+                            <div className="p-4 pt-2 space-y-4">
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                 Nilai-nilai yang sudah di-encode digabungkan menjadi vektor fitur:
                             </p>
                             <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto">
                                 <BlockMath math={`\\mathbf{X} = \\begin{bmatrix} ${encodedFeatures.map(f => f.encoded).join(' & ')} \\end{bmatrix}`} />
                             </div>
-                        </div>
+                            </div>
+                        </details>
 
                         {/* Step 3 and 4 Grid: Model Calculation and Metrics */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <details className="group border rounded-lg overflow-hidden">
+                            <summary className="flex cursor-pointer items-center justify-between p-4 font-semibold list-none [&::-webkit-details-marker]:hidden hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                                <span className="flex items-center gap-2 text-lg">
+                                    <span className="bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                                    Perhitungan Model, Metrik & Validasi
+                                </span>
+                                <span className="transition-transform duration-300 group-open:rotate-180">
+                                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                                </span>
+                            </summary>
+                            <div className="p-4 pt-2">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Step 3: Model-specific calculations */}
                             <div className="space-y-4">
                                 <h4 className="font-semibold text-lg border-b pb-2 flex items-center gap-2">
@@ -1033,12 +1127,6 @@ THEN Prediksi = ${prediction.prediction_result}`}
                                                     <p>f(x) = Σ αᵢ·yᵢ·K(xᵢ, x) + ρ = {fmtNum(svmF, 6)}</p>
                                                     <p className="pl-4">ρ = {fmtNum(svmFC.rho)} · jumlah SV = {svmFC.n_support || '—'}</p>
                                                     <p>Kernel RBF: γ = 1/7 ≈ {fmtNum(svmFC.gamma)}</p>
-                                                    <p className="text-slate-400">Kontribusi SV terbesar (α·K):</p>
-                                                    {svmFC.top_sv?.map((s) => (
-                                                        <p key={`msub-${s.index}`} className="pl-4">
-                                                            SV #{s.index + 1}: α = {fmtNum(s.dual)} · K(x,xᵢ) = {fmtNum(s.kernel)} → {fmtNum(s.contribution)}
-                                                        </p>
-                                                    ))}
                                                 </div>
                                             ) : (
                                                 <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm">
@@ -1141,7 +1229,9 @@ THEN Prediksi = ${prediction.prediction_result}`}
                                     </p>
                                 </div>
                             </div>
-                        </div>
+                            </div>
+                            </div>
+                        </details>
 
                     </CardContent>
                 </Card>
