@@ -119,6 +119,7 @@ interface ExternalValidationData {
         inclusion_criteria?: string;
         exclusion_criteria?: string;
         missing_profile?: Record<string, number> | null;
+        features?: string[];
     };
     table6?: {
         rows?: Array<{
@@ -1192,7 +1193,7 @@ export default function Statistics({ statistics, curves, interpretability, exter
                                         <Alert className="border-green-200 bg-green-50/40">
                                             <AlertDescription className="text-xs">
                                                 <span className="font-semibold">Profil missing value:</span>{' '}
-                                                Tidak ada missing value pada seluruh fitur model (5/5 fitur lengkap).
+                                                Tidak ada missing value pada seluruh fitur model ({externalValidation.cohort?.features?.length ?? 9}/{externalValidation.cohort?.features?.length ?? 9} fitur lengkap).
                                             </AlertDescription>
                                         </Alert>
                                     );

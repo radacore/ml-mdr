@@ -554,6 +554,54 @@ export default function Show({ prediction, factorContributions }: Props) {
                                                     Baseline P(Berhasil) = {fmtNum(svmFC.shap.base_value * 100, 2)}% · background: {svmFC.shap.background ?? '—'}
                                                 </p>
                                             )}
+                                            {svmFC.shap.base_value != null && (
+                                                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 text-xs font-mono text-slate-700 dark:text-slate-300 space-y-1">
+                                                    <p className="font-sans font-semibold text-slate-600 dark:text-slate-200">
+                                                        Waterfall kontribusi (persen):
+                                                    </p>
+                                                    {(() => {
+                                                        const targetPct = prediction.probabilities?.Berhasil ?? 0;
+                                                        const base = svmFC.shap.base_value ?? 0;
+                                                        const sumPhi = svmFC.shap.features.reduce((s, f) => s + f.shap_value, 0);
+                                                        const activePct = (base + sumPhi) * 100;
+                                                        const scale = sumPhi !== 0 ? (targetPct / 100 - base) / sumPhi : 1;
+                                                        const scaledPhi = svmFC.shap.features.map(f => ({ ...f, shap_value: f.shap_value * scale }));
+                                                        let cum = base;
+                                                        return (
+                                                            <>
+                                                                <p className="pl-2">
+                                                                    P(Berhasil) baseline = {fmtNum(base * 100, 2)}%
+                                                                </p>
+                                                                {scaledPhi.map((sf) => {
+                                                                    const prev = cum;
+                                                                    cum += sf.shap_value;
+                                                                    const dp = (cum - prev) * 100;
+                                                                    return (
+                                                                        <p key={`wf-${sf.feature}`} className="pl-2">
+                                                                            <span className={dp >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                                                {dp >= 0 ? '+' : ''}{fmtNum(dp, 2)}%
+                                                                            </span>{' '}
+                                                                            {sf.feature}
+                                                                        </p>
+                                                                    );
+                                                                })}
+                                                                <p className="pl-2 border-t border-slate-300 pt-1 font-bold">
+                                                                    Total P(Berhasil) = {fmtNum(base * 100 + scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100, 2)}%
+                                                                </p>
+                                                                <p className="pl-2 text-slate-400">
+                                                                    ≈ {fmtNum(base * 100, 2)}% + {scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100 >= 0 ? '+' : ''}{fmtNum(scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100, 2)}% = {fmtNum(base * 100 + scaledPhi.reduce((s, f) => s + f.shap_value, 0) * 100, 2)}%
+                                                                </p>
+                                                                {Math.abs(activePct - targetPct) > 0.05 && (
+                                                                    <p className="pl-2 text-slate-400">
+                                                                        * Kontribusi dikalibrasi terhadap probabilitas tersimpan prediksi
+                                                                        (model aktif memberi {fmtNum(activePct, 2)}%).
+                                                                    </p>
+                                                                )}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-xs border-collapse text-slate-700 dark:text-slate-300">
                                                     <thead>

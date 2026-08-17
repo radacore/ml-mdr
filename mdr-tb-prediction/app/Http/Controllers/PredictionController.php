@@ -301,7 +301,8 @@ class PredictionController extends Controller
         $needsRefresh = empty($factorContributions) ||
             ($prediction->model_used === 'Logistic Regression' && !isset($factorContributions['z_final'])) ||
             ($prediction->model_used === 'Logistic Regression' && isset($factorContributions['features'][0]) && !isset($factorContributions['features'][0]['scaled_value'])) ||
-            (in_array($prediction->model_used, ['Decision Tree', 'Support Vector Machine']) && !isset($factorContributions['type']));
+            (in_array($prediction->model_used, ['Decision Tree', 'Support Vector Machine']) && !isset($factorContributions['type'])) ||
+            ($prediction->model_used === 'Support Vector Machine' && !isset($factorContributions['shap']));
         if ($needsRefresh) {
             try {
                 $payload = $this->buildMlInput($prediction->patient_data);
