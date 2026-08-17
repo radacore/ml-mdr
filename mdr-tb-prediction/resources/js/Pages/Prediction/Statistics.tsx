@@ -121,7 +121,11 @@ interface ExternalValidationData {
         missing_profile?: Record<string, number> | null;
     };
     table6?: {
-        rows?: Array<{ metric: string; internal_test?: number; external_test?: number }>;
+        rows?: Array<{
+            metric: string;
+            internal_test?: number;
+            external_test?: number;
+        }>;
         internal?: Record<string, number> | null;
         external?: Record<string, number> | null;
     } | null;
@@ -1205,7 +1209,7 @@ export default function Statistics({ statistics, curves, interpretability, exter
 
                             {externalValidation.table6?.rows && (
                                 <div>
-                                    <p className="font-medium mb-2 text-sm">Tabel 6 — Perbandingan Metrik: Validasi Internal vs Eksternal</p>
+                                    <p className="font-medium mb-2 text-sm">Perbandingan Metrik: Validasi Internal vs Eksternal</p>
                                     <div className="overflow-x-auto">
                                         <Table>
                                             <TableHeader>
@@ -1216,15 +1220,23 @@ export default function Statistics({ statistics, curves, interpretability, exter
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {externalValidation.table6.rows.map((row) => (
-                                                    <TableRow key={row.metric}>
-                                                        <TableCell className="border font-medium">{row.metric}</TableCell>
-                                                        <TableCell className="text-center border">{typeof row.internal_test === 'number' ? row.internal_test.toFixed(2) : '-'}</TableCell>
-                                                        <TableCell className="text-center border font-semibold">
-                                                            {typeof row.external_test === 'number' ? row.external_test.toFixed(2) : '-'}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
+                                                {externalValidation.table6.rows.map((row) => {
+                                                    const isBrier = row.metric === 'Brier score';
+                                                    const dp = isBrier ? 4 : 2;
+                                                    const fmtCell = (val: number | undefined) => {
+                                                        if (typeof val !== 'number') return '-';
+                                                        return `${val.toFixed(dp)}`;
+                                                    };
+                                                    return (
+                                                        <TableRow key={row.metric}>
+                                                            <TableCell className="border font-medium">{row.metric}</TableCell>
+                                                            <TableCell className="text-center border">{fmtCell(row.internal_test)}</TableCell>
+                                                            <TableCell className="text-center border font-semibold">
+                                                                {fmtCell(row.external_test)}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
                                             </TableBody>
                                         </Table>
                                     </div>

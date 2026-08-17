@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, roc_auc_score, roc_curve,
+    confusion_matrix, roc_auc_score, roc_curve, brier_score_loss,
 )
 from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -122,6 +122,8 @@ def _evaluate(y_true, y_pred, y_proba) -> Dict[str, float]:
         "recall": round(float(recall_score(y_true, y_pred, zero_division=0)) * 100, 2),
         "f1": round(float(f1_score(y_true, y_pred, zero_division=0)) * 100, 2),
         "specificity": round(float(tn / (tn + fp) * 100), 2) if (tn + fp) > 0 else 0.0,
+        "ppv": round(float(precision_score(y_true, y_pred, zero_division=0)) * 100, 2),
+        "npv": round(float(tn / (tn + fn) * 100), 2) if (tn + fn) > 0 else 0.0,
         "n": int(len(y_true)),
         "confusion_matrix": {"tp": int(tp), "tn": int(tn), "fp": int(fp), "fn": int(fn)},
     }
@@ -130,9 +132,60 @@ def _evaluate(y_true, y_pred, y_proba) -> Dict[str, float]:
             metrics["auc_roc"] = round(float(roc_auc_score(y_true, y_proba)) * 100, 2)
         except Exception:
             metrics["auc_roc"] = None
+        try:
+            metrics["brier"] = round(float(brier_score_loss(y_true, y_proba)), 4)
+        except Exception:
+            metrics["brier"] = None
     else:
         metrics["auc_roc"] = None
+        metrics["brier"] = None
     return metrics
+
+
+def _bootstrap_ci(y_true, y_pred, y_proba, n_iter: int = 1000,
+                  seed: int = RANDOM_STATE) -> Dict[str, Dict[str, float]]:
+    """95% CI bootstrap (percentile) untuk metrik pada satu dataset.
+
+    Mengambil sampel dengan pengembalian (idxs) n_iter kali, menghitung
+    metrik per sampel, lalu mengambil persentil 2.5 dan 97.5.
+    """
+    rng = np.random.RandomState(seed)
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    y_proba = np.asarray(y_proba)
+    n = len(y_true)
+
+    metric_names = ["accuracy", "recall", "specificity", "ppv", "npv", "f1", "auc_roc", "brier"]
+    acc = {m: [] for m in metric_names}
+
+    for _ in range(n_iter):
+        idx = rng.randint(0, n, size=n)
+        yt, yp, ypr = y_true[idx], y_pred[idx], y_proba[idx]
+        cm = confusion_matrix(yt, yp)
+        tn, fp, fn, tp = (cm.ravel().tolist() + [0, 0, 0, 0])[:4] if cm.size >= 4 else (0, 0, 0, 0)
+        acc["accuracy"].append(accuracy_score(yt, yp))
+        acc["recall"].append(tp / (tp + fn) if (tp + fn) > 0 else 0.0)
+        acc["specificity"].append(tn / (tn + fp) if (tn + fp) > 0 else 0.0)
+        acc["ppv"].append(tp / (tp + fp) if (tp + fp) > 0 else 0.0)
+        acc["npv"].append(tn / (tn + fn) if (tn + fn) > 0 else 0.0)
+        acc["f1"].append(f1_score(yt, yp, zero_division=0))
+        if len(np.unique(yt)) > 1:
+            acc["auc_roc"].append(roc_auc_score(yt, ypr))
+            acc["brier"].append(brier_score_loss(yt, ypr))
+
+    out = {}
+    for m in metric_names:
+        vals = np.asarray(acc[m])
+        if len(vals) == 0:
+            out[m] = None
+            continue
+        lo, hi = np.percentile(vals, [2.5, 97.5])
+        out[m] = {
+            "mean": float(np.mean(vals)),
+            "ci_lower": float(lo),
+            "ci_upper": float(hi),
+        }
+    return out
 
 
 def run_external_validation(use_smote: bool = True, exclude_mono_inh: bool = True, verbose: bool = True) -> Dict[str, object]:
@@ -195,6 +248,7 @@ def run_external_validation(use_smote: bool = True, exclude_mono_inh: bool = Tru
     y_test_pred = clf.predict(X_test_s)
     y_test_proba = clf.predict_proba(X_test_s)[:, 1]
     internal_metrics = _evaluate(y_test, y_test_pred, y_test_proba)
+    internal_ci = _bootstrap_ci(y_test, y_test_pred, y_test_proba)
 
     # Evaluasi pada validation (untuk referensi internal val)
     y_val_pred = clf.predict(X_val_s)
@@ -207,6 +261,7 @@ def run_external_validation(use_smote: bool = True, exclude_mono_inh: bool = Tru
     y_gowa_pred = clf.predict(X_gowa_s)
     y_gowa_proba = clf.predict_proba(X_gowa_s)[:, 1]
     external_metrics = _evaluate(y_gowa_true, y_gowa_pred, y_gowa_proba)
+    external_ci = _bootstrap_ci(y_gowa_true, y_gowa_pred, y_gowa_proba)
 
     # ROC eksternal — sanitasi inf/nan (roc_curve menaruh inf di thresholds pertama,
     # dan JSON tidak mengizinkan Infinity; PHP json_decode akan gagal)
@@ -229,19 +284,46 @@ def run_external_validation(use_smote: bool = True, exclude_mono_inh: bool = Tru
         "external": {k: external_metrics.get(k) for k in ["accuracy", "precision", "recall", "f1"]},
         "internal_test": {k: internal_metrics.get(k) for k in ["accuracy", "precision", "recall", "f1"]},
     }
-    # Kolom tabel: Internal test vs External test
+
+    # Metrik yang direkomendasikan reviewer: Sensitivity(=Recall), Specificity,
+    # PPV(=Precision), NPV, F1, AUC-ROC + 95% CI, Brier. CI dihitung bootstrap
+    # (n_iter=1000). AUC/Brier juga dilaporkan untuk internal & eksternal.
+    metric_cfg = [
+        ("accuracy", "Accuracy", True),
+        ("precision", "Precision", True),
+        ("recall", "Recall", True),
+        ("f1", "F1 score", True),
+        ("specificity", "Specificity", True),
+        ("npv", "NPV", True),
+        ("auc_roc", "AUC-ROC", True),
+        ("brier", "Brier score", False),
+    ]
+
+    def _pct(v):
+        return round(float(v) * 100, 2) if v is not None else None
+
+    def _ci_row(ci, key, is_pct):
+        if not ci or ci.get(key) is None:
+            return None, None, None
+        c = ci[key]
+        if is_pct:
+            return _pct(c["ci_lower"]), _pct(c["ci_upper"]), _pct(c["mean"])
+        return round(float(c["ci_lower"]), 4), round(float(c["ci_upper"]), 4), round(float(c["mean"]), 4)
+
     table6_rows = []
-    for metric, label in [
-        ("accuracy", "Accuracy"),
-        ("precision", "Precision"),
-        ("recall", "Recall"),
-        ("f1", "F1 score"),
-    ]:
-        table6_rows.append({
+    for metric, label, is_pct in metric_cfg:
+        ilo, ihi, imean = _ci_row(internal_ci, metric, is_pct)
+        elo, ehi, emean = _ci_row(external_ci, metric, is_pct)
+        row = {
             "metric": label,
             "internal_test": internal_metrics.get(metric),
             "external_test": external_metrics.get(metric),
-        })
+        }
+        if ilo is not None:
+            row.update({"internal_ci_lower": ilo, "internal_ci_upper": ihi, "internal_ci_mean": imean})
+        if elo is not None:
+            row.update({"external_ci_lower": elo, "external_ci_upper": ehi, "external_ci_mean": emean})
+        table6_rows.append(row)
 
     result = {
         "status": "success",
